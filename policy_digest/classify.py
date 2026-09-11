@@ -106,7 +106,7 @@ def _keyword_match(item: Item) -> str | None:
 
 def _classify_batch_with_llm(client, batch: list[Item]) -> list[Classification]:
     prompt_items = "\n\n".join(
-        f"[{i}] Source: {it.source}\nTitle: {it.title}\nDetails: {it.raw_text[:600]}"
+        f"[{i}] Source: {it.source}\nTitle: {it.title}\nDetails: {it.raw_text[:2500]}"
         for i, it in enumerate(batch)
     )
     message = client.messages.create(

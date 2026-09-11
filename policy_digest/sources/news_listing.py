@@ -15,6 +15,19 @@ HEADERS = {"User-Agent": "Mozilla/5.0 (policy-digest prototype; +startin.lv test
 MAX_PAGES = 10  # safety cap; the loop normally stops early once past `since`
 
 
+def _fetch_article_body(url: str) -> str:
+    """Both em.gov.lv and liaa.gov.lv render the article body in the same
+    Drupal CKEditor field, so one selector covers both sites."""
+    try:
+        resp = requests.get(url, headers=HEADERS, timeout=30)
+        resp.raise_for_status()
+    except requests.RequestException:
+        return ""
+    soup = BeautifulSoup(resp.text, "html.parser")
+    node = soup.select_one(".text__text-content")
+    return node.get_text(" ", strip=True) if node else ""
+
+
 def fetch_news_listing(
     base_url: str, source_name: str, since: date, listing_path: str = "/lv/jaunumi"
 ) -> list[Item]:
@@ -52,6 +65,7 @@ def fetch_news_listing(
             href = link["href"]
             full_url = href if href.startswith("http") else base_url + href
             summary = summary_tag.get_text(strip=True) if summary_tag else ""
+            body = _fetch_article_body(full_url)
 
             items.append(
                 Item(
@@ -60,7 +74,7 @@ def fetch_news_listing(
                     url=full_url,
                     date=article_date.isoformat(),
                     summary=summary,
-                    raw_text=f"{title}\n\n{summary}",
+                    raw_text=f"{title}\n\n{body or summary}",
                 )
             )
 

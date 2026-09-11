@@ -20,7 +20,13 @@ if sys.stdout.encoding.lower() != "utf-8":
 
 from policy_digest.classify import classify_items
 from policy_digest.digest import render_html, render_markdown
-from policy_digest.sources import fetch_mk_meetings, fetch_news_listing, fetch_tap_legal_acts
+from policy_digest.sources import (
+    fetch_altum_news,
+    fetch_mk_meetings,
+    fetch_news_listing,
+    fetch_saeima_committees,
+    fetch_tap_legal_acts,
+)
 from policy_digest.state import load_seen, save_seen
 
 ROOT = Path(__file__).parent
@@ -39,6 +45,8 @@ SOURCES = [
     ),
     ("Ekonomikas ministrija", lambda since: fetch_news_listing("https://www.em.gov.lv", "Ekonomikas ministrija", since)),
     ("LIAA", lambda since: fetch_news_listing("https://www.liaa.gov.lv", "LIAA", since)),
+    ("Altum", lambda since: fetch_altum_news(since)),
+    ("Saeimas komisiju darba kārtības", lambda since: fetch_saeima_committees(since)),
 ]
 
 

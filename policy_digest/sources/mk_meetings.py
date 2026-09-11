@@ -28,8 +28,13 @@ def _parse_meeting_date(text: str) -> date | None:
         return None
 
 
-def _fetch_protocol_items(protocol_url: str, meeting_title: str) -> list[tuple[str, str]]:
-    """Returns [(item_title, fragment_url), ...] for one protocol page."""
+def _fetch_protocol_items(protocol_url: str, meeting_title: str) -> list[tuple[str, str, str]]:
+    """Returns [(item_title, fragment_url, full_text), ...] for one protocol page.
+
+    Each agenda item's full decision text sits in a `.structuralizer-tree` div that's a
+    sibling (not a child) of the `.meeting-protocol-question--preview` block — already on
+    this same page, so this costs no extra request.
+    """
     resp = requests.get(protocol_url, headers=HEADERS, timeout=30)
     resp.raise_for_status()
     soup = BeautifulSoup(resp.text, "html.parser")
@@ -44,12 +49,20 @@ def _fetch_protocol_items(protocol_url: str, meeting_title: str) -> list[tuple[s
             continue
         block_id = block.get("id", "")
         url = f"{protocol_url}#{block_id}" if block_id else protocol_url
-        results.append((title, url))
+
+        full_text = ""
+        content_wrapper = block.find_next_sibling("div")
+        if content_wrapper:
+            tree = content_wrapper.select_one(".structuralizer-tree")
+            if tree:
+                full_text = tree.get_text(" ", strip=True)
+
+        results.append((title, url, full_text))
 
     if not results:
         # Protocol page exists but had no parseable items (e.g. fully closed session) —
         # fall back to the meeting title itself so it isn't silently dropped.
-        results.append((meeting_title, protocol_url))
+        results.append((meeting_title, protocol_url, ""))
 
     return results
 
@@ -87,7 +100,10 @@ def fetch_mk_meetings(meeting_type: str, source_name: str, since: date) -> list[
 
             if protocol_link:
                 protocol_url = BASE_URL + protocol_link["href"]
-                for item_title, item_url in _fetch_protocol_items(protocol_url, meeting_title):
+                for item_title, item_url, full_text in _fetch_protocol_items(protocol_url, meeting_title):
+                    raw_text = f"{item_title}\n\n(No sēdes: {meeting_title})"
+                    if full_text:
+                        raw_text += f"\n\n{full_text}"
                     items.append(
                         Item(
                             source=source_name,
@@ -95,7 +111,7 @@ def fetch_mk_meetings(meeting_type: str, source_name: str, since: date) -> list[
                             url=item_url,
                             date=meeting_date.isoformat(),
                             summary=meeting_title,
-                            raw_text=f"{item_title}\n\n(No sēdes: {meeting_title})",
+                            raw_text=raw_text,
                         )
                     )
             else:

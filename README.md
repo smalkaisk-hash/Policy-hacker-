@@ -5,21 +5,19 @@ weekly digest of only the items that are actually relevant to startups.
 
 ## Sources covered
 
-| Source | Required? | How it's fetched |
-|---|---|---|
-| **TAP portāls** | Mandatory | Official [open dataset on data.gov.lv](https://data.gov.lv/dati/lv/dataset/tap-publicetie-tiesibu-akti) — clean, no-auth, CC0 JSON, updated daily. No scraping needed. |
-| Valsts sekretāru sanāksme | ✓ | Scrapes `tapportals.mk.gov.lv/meetings/state_secretaries`, following each meeting's protocol to list the actual agenda items decided. |
-| Ministru kabineta protokoli | ✓ | Same mechanism as above, `tapportals.mk.gov.lv/meetings/cabinet_ministers`. |
-| Ekonomikas ministrija | ✓ | Scrapes the `em.gov.lv/lv/jaunumi` news listing. |
-| LIAA | ✓ | Scrapes the `liaa.gov.lv/lv/jaunumi` news listing (same CMS template as EM). |
-| Saeimas komisiju darba kārtības | Not implemented | No unified feed found — each committee runs its own mini-site, and the one
-  lead that looked like a combined listing (`titania.saeima.lv`, an old IBM Domino system) didn't
-  return parseable content on a first attempt. Skipped given the time budget; see "What's next" below. |
-| Altum | Not implemented | Not selected as one of the 5 target sources for this prototype (same news-listing
-  pattern as EM/LIAA would very likely work — straightforward to add). |
+**All 7 listed sources are implemented** — well past the task's minimum bar (≥3 sources, TAP
+portāls included). Every source scrapes the actual article/document body, not just the
+headline — see "How it works" below for what's fetched per source.
 
-This clears the task's minimum bar (≥3 sources, TAP portāls included) with room to spare —
-**5 of 7 sources implemented**.
+| Source | How it's fetched |
+|---|---|
+| **TAP portāls** (mandatory) | Metadata from the official [open dataset on data.gov.lv](https://data.gov.lv/dati/lv/dataset/tap-publicetie-tiesibu-akti) (clean, no-auth, CC0 JSON, updated daily), plus the full draft decision/annotation text pulled from TAP's public "structuralizer" preview endpoint for each act. |
+| Valsts sekretāru sanāksme | Scrapes `tapportals.mk.gov.lv/meetings/state_secretaries`, following each meeting's protocol page to list the individual agenda items *and* their full decision text. |
+| Ministru kabineta protokoli | Same mechanism, `tapportals.mk.gov.lv/meetings/cabinet_ministers`. |
+| Ekonomikas ministrija | Scrapes the `em.gov.lv/lv/jaunumi` listing, then fetches each article's own page for the full body. |
+| LIAA | Same mechanism as EM (same underlying CMS template), `liaa.gov.lv/lv/jaunumi`. |
+| Altum | Scrapes `altum.lv/par-altum/aktualitates/` (a different CMS than EM/LIAA, so it has its own scraper) and fetches each article's full body. Note: this listing page isn't paginated, so a lookback window longer than ~1 month may miss older items. |
+| Saeimas komisiju darba kārtības | No unified feed exists on saeima.lv itself (each committee runs its own mini-site) — but its "Komisiju sēžu darba kārtības" link forwards to an internal Domino system (`titania.saeima.lv`) whose public view lists *all* committees' sittings for a given day, each with the full agenda text. Queried once per day in the lookback window. |
 
 ## What counts as "startup-relevant"
 
@@ -39,11 +37,16 @@ agriculture subsidies with no tech angle) are excluded. This definition is encod
 ## How it works
 
 ```
-fetch (5 sources) → dedupe against local state → classify for relevance → render digest
+fetch (7 sources, full text) → dedupe against local state → classify for relevance → render digest
 ```
 
 1. **Fetch** — one module per source under `policy_digest/sources/`, each returning a normalized
-   `Item(source, title, url, date, summary, raw_text)`.
+   `Item(source, title, url, date, summary, raw_text)`. `raw_text` is the actual article/document
+   body where one exists (fetched from the item's own detail page, or already present on the page
+   already being scraped — e.g. MK/VSS agenda item text and Saeima's full agenda sit right on the
+   listing/detail pages already being requested, so no extra request is needed for those). This
+   matters because classification is only as good as what it can see: a title alone is often too
+   vague to judge.
 2. **Dedupe** — `policy_digest/state.py` keeps `output/state.json`, a flat list of previously seen
    item URLs, so re-running only surfaces genuinely new items (this is what actually saves the
    "5 hours/week of manual checking").
@@ -79,11 +82,24 @@ get real LLM classification; omit it to run in free keyword-only mode. Output la
 `output/digest_<today>.md` and `output/digest_<today>.html` (gitignored — a sample run is
 checked into [`sample_digest/`](sample_digest/) instead).
 
+## Known limitations
+
+- **TAP portāls**: only the document version rendered by TAP's inline "structuralizer" preview is
+  fetched; a version that's a plain file attachment (.docx) is skipped rather than downloaded and
+  parsed. Most acts have at least one structuralizer-rendered version, but not all.
+- **Altum**: its news listing page isn't paginated, so it only sees the ~12 most recent items —
+  fine for a weekly run, not for a lookback window beyond about a month.
+- **EM / LIAA syndication**: the same article is sometimes published on both sites verbatim and
+  currently shows up twice (once per source) rather than being deduplicated across sources.
+- **Saeima**: pulled from an internal-looking Domino endpoint reached only via a redirect from the
+  public site — undocumented, so it could change without notice; no official API was found.
+
 ## What's next (week 1 → month 3)
 
 - **Week 1**: run this as-is via a scheduled GitHub Actions workflow (free) that posts the
   digest to a Slack channel via an incoming webhook — lowest friction, no server to maintain.
-- **Month 3**: add Saeima (once a real per-committee or Domino-based feed is worked out) and
-  Altum (same scraper as EM/LIAA); move dedupe state from a JSON file to SQLite; add email
-  delivery (Resend/Postmark/SMTP) alongside Slack for non-technical stakeholders; tune the
-  keyword list and classifier prompt against a few weeks of real flagged/skipped items.
+- **Month 3**: dedupe near-identical items across sources (e.g. EM/LIAA syndication); move
+  dedupe state from a JSON file to SQLite; add email delivery (Resend/Postmark/SMTP) alongside
+  Slack for non-technical stakeholders; parse TAP's .docx attachments for the acts that don't
+  have a structuralizer preview; tune the keyword list and classifier prompt against a few weeks
+  of real flagged/skipped items.
