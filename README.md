@@ -71,13 +71,20 @@ fetch (7 sources, full text) → dedupe against local state → classify for rel
      the ceiling for what's possible without an LLM: a real one-line "why this matters to
      startups" summary needs actual reading comprehension, which is exactly what the Claude
      Haiku stage below does once a key is supplied.
-4. **Dedupe across sources** — `policy_digest/dedupe.py` merges items with the same (title,
-   date) found on more than one source into a single entry (e.g. EM and LIAA sometimes
-   syndicate the identical press release verbatim) — the merged entry credits every source it
-   appeared on (e.g. "Ekonomikas ministrija + LIAA"). Keyed on title *and* date, not title
-   alone, since some sources have recurring items that legitimately share a name on different
-   days (a standing Saeima committee's sitting is always called "Budžeta un finanšu (nodokļu)
-   komisijas sēde" regardless of that day's actual agenda) — those must stay separate.
+4. **Dedupe across sources** — `policy_digest/dedupe.py` merges items that are the same
+   underlying article/document published on more than one source (e.g. EM and LIAA sometimes
+   syndicate the identical press release, whether verbatim or with a reworded headline) into
+   one entry crediting every source it appeared on (e.g. "Ekonomikas ministrija + LIAA").
+   Matching compares the actual scraped article/document **body text** (via `difflib`
+   similarity, scoped to same-day items for speed), not the title — so a reworded headline
+   doesn't slip through, and it correctly leaves alone the many sources with *recurring* items
+   that legitimately share a name on different days (a standing Saeima committee's sitting is
+   always called "Budžeta un finanšu (nodokļu) komisijas sēde" regardless of that day's actual
+   agenda) since their content genuinely differs. Crucially, it only ever merges items from
+   *different* sources — two items from the same source are never compared, since a single
+   source's own scrape is already unique by construction; an earlier version of this compared
+   same-source items too and briefly (incorrectly) merged distinct same-meeting agenda items
+   that happened to share boilerplate text.
 5. **Render** — `policy_digest/digest.py` writes a digest grouped by source, both as
    `output/digest_<date>.md` and a standalone `output/digest_<date>.html`. Output is Latvian
    throughout (the "startup-relevant" definition, category labels, everything) since this is a
@@ -117,8 +124,9 @@ fallback).
   parsed. Most acts have at least one structuralizer-rendered version, but not all.
 - **Altum**: its news listing page isn't paginated, so it only sees the ~12 most recent items —
   fine for a weekly run, not for a lookback window beyond about a month.
-- **Cross-source dedupe is exact-match only**: it merges on identical (title, date), so a
-  syndicated article republished with even a slightly reworded headline wouldn't be caught.
+- **Cross-source dedupe is same-day only**: it buckets by date before comparing content (for
+  speed, and because that's the observed syndication pattern), so if the same press release
+  were republished a day or more apart it wouldn't be caught.
 - **Saeima**: pulled from an internal-looking Domino endpoint reached only via a redirect from the
   public site — undocumented, so it could change without notice; no official API was found.
 
@@ -128,6 +136,6 @@ fallback).
   digest to a Slack channel via an incoming webhook — lowest friction, no server to maintain.
 - **Month 3**: move dedupe state from a JSON file to SQLite; add email delivery
   (Resend/Postmark/SMTP) alongside Slack for non-technical stakeholders; parse TAP's .docx
-  attachments for the acts that don't have a structuralizer preview; loosen cross-source
-  dedupe from exact-match to near-duplicate matching; tune the keyword list and classifier
-  prompt against a few weeks of real flagged/skipped items.
+  attachments for the acts that don't have a structuralizer preview; widen cross-source
+  dedupe beyond same-day matching; tune the keyword list and classifier prompt against a few
+  weeks of real flagged/skipped items.
