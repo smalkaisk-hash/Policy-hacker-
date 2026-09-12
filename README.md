@@ -91,10 +91,12 @@ python run_digest.py --days 14       # wider window
 python run_digest.py --no-state      # don't read/write dedupe state (repeatable demo runs)
 ```
 
-Set `ANTHROPIC_API_KEY` in your environment (or `.env`, loaded by whatever runs the script) to
-get real LLM classification; omit it to run in free keyword-only mode. Output lands in
+Set `ANTHROPIC_API_KEY` in `.env` (auto-loaded via `python-dotenv`) or your environment to get
+real LLM classification; omit it to run in free keyword-only mode. Output lands in
 `output/digest_<today>.md` and `output/digest_<today>.html` (gitignored — a sample run is
-checked into [`sample_digest/`](sample_digest/) instead).
+checked into [`sample_digest/`](sample_digest/) instead — that sample was generated **with**
+`ANTHROPIC_API_KEY` set, i.e. the real Claude Haiku classification path, not the keyword
+fallback).
 
 ## Known limitations
 

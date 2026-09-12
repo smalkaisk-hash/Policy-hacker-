@@ -18,6 +18,10 @@ if sys.stdout.encoding.lower() != "utf-8":
     sys.stdout.reconfigure(encoding="utf-8")
     sys.stderr.reconfigure(encoding="utf-8")
 
+from dotenv import load_dotenv
+
+load_dotenv()  # picks up ANTHROPIC_API_KEY from a local .env file, if present
+
 from policy_digest.classify import classify_items
 from policy_digest.digest import render_html, render_markdown
 from policy_digest.sources import (
