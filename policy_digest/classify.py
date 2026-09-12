@@ -54,7 +54,7 @@ CLASSIFY_TOOL = {
                         "confidence": {"type": "number", "minimum": 0, "maximum": 1},
                         "reason": {
                             "type": "string",
-                            "description": "One short sentence, same language as the item title, explaining the verdict.",
+                            "description": "One short sentence IN LATVIAN explaining the verdict.",
                         },
                         "category": {
                             "type": "string",
@@ -86,7 +86,8 @@ Mark it NOT relevant if it's routine administrative/personnel/ceremonial busines
 sector with no plausible startup angle (e.g. agricultural subsidies unrelated to agtech,
 healthcare staffing, road maintenance).
 
-Be decisive. Write the one-line reason in the same language as the item's title."""
+Be decisive. Always write the one-line reason in Latvian, regardless of what language the
+source item is in — the digest this feeds is Latvian-only."""
 
 
 @dataclass
@@ -205,7 +206,7 @@ def classify_items(items: list[Item]) -> list[Classification]:
                 item=item,
                 relevant=True,
                 confidence=0.5,
-                reason=f'"{snippet}" — matched keyword "{kw}" (no ANTHROPIC_API_KEY set — keyword-only mode)',
+                reason=f'"{snippet}" — atrasta atslēgvārda "{kw}" sakarā (bez ANTHROPIC_API_KEY, atslēgvārdu režīms)',
                 category="other",
             )
             for item, kw, snippet in candidates

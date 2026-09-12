@@ -1,4 +1,6 @@
-"""Renders classified items into a Markdown + HTML digest."""
+"""Renders classified items into a Markdown + HTML digest. Output is Latvian throughout —
+this is a digest for a Latvian team about Latvian government sources.
+"""
 
 import base64
 import html as html_lib
@@ -13,27 +15,26 @@ LOGO_PATH = Path(__file__).resolve().parent.parent / "assets" / "logobig.png"
 LOGO_MARKDOWN_PATH = "../assets/logobig.png"
 
 DEFINITION = (
-    '"Startup-relevant" = funding/support programs (grants, EU funds, accelerator/incubator '
-    "programs, LIAA/Altum initiatives), legal or regulatory changes affecting startups/SMEs/tech "
-    "companies (company law, tax treatment, employee stock options, labor law, digital/AI "
-    "regulation, public procurement), or draft legislation/initiatives on innovation, "
-    "digitalization, and entrepreneurship."
+    '"Startapiem atbilstošs" = finansējuma un atbalsta programmas (granti, ES fondi, '
+    "akseleratoru/inkubatoru programmas, LIAA/Altum iniciatīvas), tiesiskas vai regulatīvas "
+    "izmaiņas, kas skar startapus, MVU vai tehnoloģiju uzņēmumus (komerctiesības, nodokļu "
+    "režīms, darba tiesības, digitālo pakalpojumu/MI regulējums, publiskie iepirkumi), vai "
+    "likumprojekti/iniciatīvas par inovācijām, digitalizāciju un uzņēmējdarbību."
 )
 
-# label, text color, background color — used by the HTML category badges;
-# the label alone is reused in the Markdown render.
+# (Latvian label, accent hex) — one accent color used consistently, not a rainbow per
+# category; categories are told apart by label text, not by hue.
 CATEGORY_META = {
-    "funding": ("Funding", "#047857", "#d1fae5"),
-    "regulation": ("Regulation", "#1d4ed8", "#dbeafe"),
-    "tax_labor": ("Tax & Labor", "#b45309", "#fef3c7"),
-    "digitalization_innovation": ("Digital & Innovation", "#7e22ce", "#f3e8ff"),
-    "other": ("Other", "#475569", "#e2e8f0"),
+    "funding": ("Finansējums", "#a3123c"),
+    "regulation": ("Regulējums", "#a3123c"),
+    "tax_labor": ("Nodokļi un darbs", "#a3123c"),
+    "digitalization_innovation": ("Digitalizācija un inovācijas", "#a3123c"),
+    "other": ("Cits", "#6b6b70"),
 }
-ACCENT_BORDER = {cat: meta[1] for cat, meta in CATEGORY_META.items()}
 
 
-def _category_meta(category: str) -> tuple[str, str, str]:
-    return CATEGORY_META.get(category, CATEGORY_META["other"])
+def _category_label(category: str) -> str:
+    return CATEGORY_META.get(category, CATEGORY_META["other"])[0]
 
 
 def _group_by_source(classifications: list[Classification]) -> dict[str, list[Classification]]:
@@ -49,26 +50,26 @@ def render_markdown(classifications: list[Classification], since: date, run_date
     lines = [
         f"![startin.lv]({LOGO_MARKDOWN_PATH})",
         "",
-        f"# Policy Digest — {run_date.isoformat()}",
+        f"# Politikas apkopojums — {run_date.isoformat()}",
         "",
-        f"> Window: {since.isoformat()} to {run_date.isoformat()}.",
+        f"> Periods: {since.isoformat()} — {run_date.isoformat()}.",
         f"> {DEFINITION}",
         "",
     ]
 
     if not classifications:
-        lines.append("No startup-relevant items found in this window.")
+        lines.append("Šajā periodā nav atrasts neviens startapiem atbilstošs ieraksts.")
         return "\n".join(lines)
 
     grouped = _group_by_source(classifications)
-    lines.append(f"**{len(classifications)} relevant item(s) across {len(grouped)} source(s).**")
+    lines.append(f"**{len(classifications)} atbilstoši ieraksti no {len(grouped)} avotiem.**")
     lines.append("")
 
     for source, items in sorted(grouped.items()):
         lines.append(f"## {source} ({len(items)})")
         lines.append("")
         for c in items:
-            label, _, _ = _category_meta(c.category)
+            label = _category_label(c.category)
             lines.append(f"- **[{c.item.title}]({c.item.url})** — {c.item.date} · `{label}`")
             lines.append(f"  > {c.reason}")
         lines.append("")
@@ -93,145 +94,145 @@ def render_html(classifications: list[Classification], since: date, run_date: da
     body_parts = [
         "<header class='masthead'>",
         logo_html,
-        "<div class='masthead-text'>",
-        "<span class='eyebrow'>Policy Monitoring Digest</span>",
-        f"<h1>{run_date.isoformat()}</h1>",
-        "</div>",
+        "<div class='rule'></div>",
+        f"<time>{run_date.isoformat()}</time>",
         "</header>",
-        "<div class='meta-box'>",
-        f"<p><strong>Window</strong> {since.isoformat()} &rarr; {run_date.isoformat()}</p>",
-        f"<p>{esc(DEFINITION)}</p>",
-        "</div>",
+        f"<h1>Politikas apkopojums</h1>",
+        f"<p class='dek'>Periods: {since.isoformat()} — {run_date.isoformat()}. {esc(DEFINITION)}</p>",
     ]
 
     if not classifications:
-        body_parts.append("<p class='empty'>No startup-relevant items found in this window.</p>")
+        body_parts.append("<p class='empty'>Šajā periodā nav atrasts neviens startapiem atbilstošs ieraksts.</p>")
     else:
         grouped = _group_by_source(classifications)
+        n_items, n_sources = len(classifications), len(grouped)
+        item_word = "ieraksts" if n_items == 1 else "ieraksti"
+        source_word = "avota" if n_sources == 1 else "avotiem"
         body_parts.append(
-            "<div class='stats'>"
-            f"<div class='stat'><span class='stat-num'>{len(classifications)}</span>"
-            "<span class='stat-label'>relevant items</span></div>"
-            f"<div class='stat'><span class='stat-num'>{len(grouped)}</span>"
-            "<span class='stat-label'>sources</span></div>"
-            "</div>"
+            f"<p class='lede'><strong>{n_items}</strong> atbilstoši {item_word} "
+            f"no <strong>{n_sources}</strong> {source_word}.</p>"
         )
         for source, items in sorted(grouped.items()):
-            body_parts.append(
-                f"<section class='source'><h2>{esc(source)} "
-                f"<span class='count'>{len(items)}</span></h2><ul>"
-            )
+            body_parts.append(f"<h2>{esc(source)} <span class='count'>{len(items)}</span></h2><ul>")
             for c in items:
-                label, color, bg = _category_meta(c.category)
+                label = _category_label(c.category)
                 body_parts.append(
-                    f"<li class='item' style='border-left-color:{color}'>"
+                    "<li>"
                     "<div class='item-head'>"
                     f"<a href='{esc(c.item.url)}' target='_blank' rel='noopener'>{esc(c.item.title)}</a>"
-                    f"<span class='badge' style='color:{color};background:{bg}'>{esc(label)}</span>"
                     "</div>"
-                    f"<div class='date'>{c.item.date}</div>"
+                    f"<div class='item-meta'>{c.item.date} &nbsp;&middot;&nbsp; "
+                    f"<span class='tag'>{esc(label)}</span></div>"
                     f"<p class='reason'>{esc(c.reason)}</p>"
                     "</li>"
                 )
-            body_parts.append("</ul></section>")
+            body_parts.append("</ul>")
 
     body = "\n".join(body_parts)
     return f"""<!DOCTYPE html>
-<html lang="en">
+<html lang="lv">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Policy Digest — {run_date.isoformat()}</title>
+<title>Politikas apkopojums — {run_date.isoformat()}</title>
 <style>
   * {{ box-sizing: border-box; }}
   body {{
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
-    background: #f4f4f6;
-    color: #17181c;
+    font-family: Georgia, "Iowan Old Style", "Palatino Linotype", serif;
+    background: #f2f1ee;
+    color: #201f1d;
     margin: 0;
-    padding: 2.5rem 1rem;
+    padding: 3rem 1.25rem 5rem;
   }}
   .page {{
-    max-width: 840px;
+    max-width: 700px;
     margin: 0 auto;
-    background: #ffffff;
-    border-radius: 16px;
-    box-shadow: 0 1px 3px rgba(15, 15, 20, 0.06), 0 8px 24px rgba(15, 15, 20, 0.06);
-    padding: 2.75rem 3rem 3rem;
+    background: #fffdfb;
+    padding: 0 0 1rem;
   }}
   .masthead {{
     display: flex;
     align-items: center;
-    gap: 1.25rem;
-    padding-bottom: 1.5rem;
-    margin-bottom: 1.5rem;
-    border-bottom: 1px solid #ececef;
+    gap: 1rem;
+    margin-bottom: 0.6rem;
   }}
-  .logo {{ height: 40px; width: auto; flex-shrink: 0; }}
-  .masthead-text {{ display: flex; flex-direction: column; }}
-  .eyebrow {{
+  .logo {{ height: 30px; width: auto; filter: grayscale(1); opacity: 0.85; }}
+  .rule {{ flex: 1; height: 1px; background: #201f1d; }}
+  time {{
+    font-family: "Helvetica Neue", Arial, sans-serif;
+    font-size: 0.72rem;
+    letter-spacing: 0.06em;
+    color: #6b6b70;
     text-transform: uppercase;
-    letter-spacing: 0.08em;
-    font-size: 0.72rem;
-    font-weight: 700;
-    color: #c2255c;
   }}
-  h1 {{ margin: 0.1rem 0 0; font-size: 1.8rem; font-weight: 800; letter-spacing: -0.01em; }}
-  .meta-box {{
-    background: #faf7f8;
-    border: 1px solid #f0e4e8;
-    border-radius: 10px;
-    padding: 0.9rem 1.1rem;
-    font-size: 0.88rem;
-    color: #55565c;
-    line-height: 1.5;
+  h1 {{
+    font-size: 2.3rem;
+    font-weight: 400;
+    margin: 0 0 0.6rem;
+    letter-spacing: -0.01em;
   }}
-  .meta-box p {{ margin: 0.25rem 0; }}
-  .meta-box strong {{ color: #17181c; }}
-  .stats {{ display: flex; gap: 2rem; margin: 1.75rem 0 0.5rem; }}
-  .stat {{ display: flex; flex-direction: column; }}
-  .stat-num {{ font-size: 2rem; font-weight: 800; color: #c2255c; line-height: 1; }}
-  .stat-label {{ font-size: 0.8rem; color: #77787f; margin-top: 0.15rem; }}
-  .empty {{ color: #55565c; margin-top: 1.5rem; }}
-  h2 {{
+  .dek {{
+    font-family: "Helvetica Neue", Arial, sans-serif;
+    font-size: 0.92rem;
+    color: #4a4a4d;
+    line-height: 1.6;
+    border-top: 1px solid #ddd9d2;
+    border-bottom: 1px solid #ddd9d2;
+    padding: 0.9rem 0;
+    margin: 0 0 1.6rem;
+  }}
+  .lede {{
+    font-family: "Helvetica Neue", Arial, sans-serif;
     font-size: 1.05rem;
+    margin: 0 0 2rem;
+  }}
+  .empty {{ font-family: "Helvetica Neue", Arial, sans-serif; color: #4a4a4d; }}
+  h2 {{
+    font-family: "Helvetica Neue", Arial, sans-serif;
+    font-size: 0.78rem;
     font-weight: 700;
-    margin: 2.5rem 0 0.9rem;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    color: #a3123c;
+    margin: 2.6rem 0 0.9rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid #201f1d;
   }}
-  .count {{
-    background: #17181c;
-    color: #fff;
-    border-radius: 999px;
-    font-size: 0.72rem;
+  .count {{ color: #a19f98; font-weight: 400; }}
+  ul {{ list-style: none; padding: 0; margin: 0; }}
+  li {{
+    padding: 1.1rem 0;
+    border-bottom: 1px solid #e6e2da;
+  }}
+  li:first-child {{ padding-top: 0; }}
+  .item-head a {{
+    font-family: Georgia, serif;
+    font-size: 1.12rem;
     font-weight: 700;
-    padding: 0.1rem 0.55rem;
+    color: #201f1d;
+    text-decoration: none;
+    line-height: 1.35;
   }}
-  ul {{ list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 0.7rem; }}
-  .item {{
-    background: #fbfbfc;
-    border: 1px solid #ececef;
-    border-left: 4px solid #ccc;
-    border-radius: 10px;
-    padding: 0.9rem 1.1rem;
-    transition: box-shadow 0.15s ease, transform 0.15s ease;
+  .item-head a:hover {{ color: #a3123c; text-decoration: underline; }}
+  .item-meta {{
+    font-family: "Helvetica Neue", Arial, sans-serif;
+    font-size: 0.76rem;
+    color: #8a8a8f;
+    margin-top: 0.3rem;
   }}
-  .item:hover {{ box-shadow: 0 4px 14px rgba(15, 15, 20, 0.08); transform: translateY(-1px); }}
-  .item-head {{ display: flex; align-items: baseline; justify-content: space-between; gap: 0.75rem; flex-wrap: wrap; }}
-  .item a {{ font-weight: 650; color: #17181c; text-decoration: none; font-size: 0.98rem; }}
-  .item a:hover {{ color: #c2255c; text-decoration: underline; }}
-  .badge {{
-    display: inline-block;
-    border-radius: 999px;
-    padding: 0.12rem 0.65rem;
-    font-size: 0.7rem;
+  .tag {{
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
     font-weight: 700;
-    white-space: nowrap;
+    color: #a3123c;
   }}
-  .date {{ color: #9a9ba1; font-size: 0.78rem; margin-top: 0.15rem; }}
-  .reason {{ color: #45464c; margin: 0.45rem 0 0; font-size: 0.9rem; line-height: 1.5; }}
+  .reason {{
+    font-family: "Helvetica Neue", Arial, sans-serif;
+    color: #3a3a3d;
+    margin: 0.5rem 0 0;
+    font-size: 0.94rem;
+    line-height: 1.55;
+  }}
 </style>
 </head>
 <body>
