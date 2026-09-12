@@ -98,12 +98,39 @@ class Classification:
     category: str
 
 
-def _snippet_around(text: str, keyword: str, radius: int = 90) -> str:
+# Splits on sentence-ending punctuation followed by a capital letter (Latvian included) —
+# deliberately does NOT split on "Nr.1449", "1.lasījums", etc. (no space, or no capital
+# after), but does split on numbered-list markers like "8. Likumprojekts" which is exactly
+# the boundary we want in this domain's agenda/protocol text.
+_SENTENCE_SPLIT_RE = re.compile(r'(?<=[.!?])\s+(?=[A-ZĀČĒĢĪĶĻŅŠŪŽ"„])')
+_SNIPPET_MAX_LEN = 320
+
+
+def _snippet_around(text: str, keyword: str) -> str:
+    """Returns the sentence the keyword appears in (widened to a neighbor sentence if
+    that one alone is too short to be useful) instead of a fixed-radius, often mid-word
+    slice — reads as an actual excerpt, not a jagged fragment."""
     idx = text.lower().find(keyword)
-    start = max(0, idx - radius)
-    end = min(len(text), idx + len(keyword) + radius)
-    snippet = re.sub(r"\s+", " ", text[start:end]).strip()
-    return f"{'…' if start > 0 else ''}{snippet}{'…' if end < len(text) else ''}"
+    if idx == -1:
+        return text[:_SNIPPET_MAX_LEN].strip()
+
+    sentences = _SENTENCE_SPLIT_RE.split(text)
+    pos = 0
+    for i, sentence in enumerate(sentences):
+        end_pos = pos + len(sentence)
+        if pos <= idx < end_pos + 1:
+            snippet = sentence.strip()
+            if len(snippet) < 40 and i + 1 < len(sentences):
+                snippet = f"{snippet} {sentences[i + 1].strip()}"
+            if len(snippet) < 40 and i > 0:
+                snippet = f"{sentences[i - 1].strip()} {snippet}"
+            snippet = re.sub(r"\s+", " ", snippet).strip()
+            if len(snippet) > _SNIPPET_MAX_LEN:
+                snippet = snippet[:_SNIPPET_MAX_LEN].rsplit(" ", 1)[0] + "…"
+            return snippet
+        pos = end_pos + 1
+
+    return text[:_SNIPPET_MAX_LEN].strip()
 
 
 def _keyword_match(item: Item) -> tuple[str, str] | None:
@@ -178,7 +205,7 @@ def classify_items(items: list[Item]) -> list[Classification]:
                 item=item,
                 relevant=True,
                 confidence=0.5,
-                reason=f'"{snippet}" (matched "{kw}"; no ANTHROPIC_API_KEY set — keyword-only mode)',
+                reason=f'"{snippet}" — matched keyword "{kw}" (no ANTHROPIC_API_KEY set — keyword-only mode)',
                 category="other",
             )
             for item, kw, snippet in candidates

@@ -63,12 +63,14 @@ fetch (7 sources, full text) → dedupe against local state → classify for rel
      batches (structured tool-use call) for a real relevance judgment, confidence, one-line
      reason, and category;
    - without a key, the keyword-filtered items are used directly, with the reason built from
-     the actual matched text (the sentence the keyword was found in, quoted from the article/
-     document body, preferring the body over the title — a committee literally named "...
-     (nodokļu)..." would otherwise "match" on every single sitting regardless of that day's
-     real agenda) rather than a bare "keyword found" label. Cruder than a real LLM judgment
-     call, but still grounded in what the text actually says, and keeps the tool runnable with
-     zero paid dependencies.
+     the actual matched text — the full *sentence* the keyword appears in (sentence-boundary
+     aware, not a fixed character radius, so it reads cleanly instead of cutting off mid-word),
+     quoted from the article/document body, preferring the body over the title (a committee
+     literally named "...(nodokļu)..." would otherwise "match" on every single sitting
+     regardless of that day's real agenda) — rather than a bare "keyword found" label. This is
+     the ceiling for what's possible without an LLM: a real one-line "why this matters to
+     startups" summary needs actual reading comprehension, which is exactly what the Claude
+     Haiku stage below does once a key is supplied.
 4. **Render** — `policy_digest/digest.py` writes a digest grouped by source, both as
    `output/digest_<date>.md` and a standalone `output/digest_<date>.html`.
 
