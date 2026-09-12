@@ -17,11 +17,11 @@ LOGO_MARKDOWN_PATH = "../assets/logobig.png"
 TITLE = "Politikas monitorings"  # "Policy monitoring" — matches the task's own naming
 
 DEFINITION = (
-    '"Jaunuzņēmumiem atbilstošs" = finansējuma un atbalsta programmas (granti, ES fondi, '
-    "akseleratoru/inkubatoru programmas, LIAA/Altum iniciatīvas), tiesiskas vai regulatīvas "
-    "izmaiņas, kas skar jaunuzņēmumus, MVU vai tehnoloģiju uzņēmumus (komerctiesības, nodokļu "
-    "režīms, darba tiesības, digitālo pakalpojumu/MI regulējums, publiskie iepirkumi), vai "
-    "likumprojekti/iniciatīvas par inovācijām, digitalizāciju un uzņēmējdarbību."
+    "Jaunuzņēmumiem atbilstošs ir ieraksts, kas pēc būtības ietekmē jaunuzņēmumu darbību, "
+    "finansējumu vai izaugsmes vidi — piemēram, jauns atbalsts vai finansējuma iespēja, "
+    "izmaiņas nodokļu vai darba tiesību regulējumā, vai iniciatīva inovāciju un digitalizācijas "
+    "jomā. Katru ierakstu izvērtē mākslīgais intelekts, izlasot tā pilno saturu, nevis meklējot "
+    "atsevišķus atslēgvārdus."
 )
 
 # (Latvian label, accent hex) — one accent color used consistently, not a rainbow per

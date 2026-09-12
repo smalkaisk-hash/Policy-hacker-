@@ -1,17 +1,17 @@
 """Decides which fetched items are "startup-relevant".
 
-Two stages:
-1. A free keyword pre-filter cuts obviously unrelated items (routine
-   administrative/ceremonial notices, sectors with no startup angle) before
-   any API call is made.
-2. If an ANTHROPIC_API_KEY is available, the surviving candidates are sent to
-   Claude Haiku in small batches for a real judgment call + a one-line reason,
-   using tool-use so the response is structured JSON, not free text to parse.
+Every fetched item is sent to Claude Haiku, in small batches, so relevance is judged from
+what the item's actual text says — not from whether it happens to contain a keyword. A
+keyword hit (e.g. "finansējums", "es fondi") is common in routine, unrelated administrative
+and social-policy items too, so gating on keywords either drops genuinely relevant items
+phrased differently, or lets clearly unrelated ones through because of an incidental,
+boilerplate-sounding mention. The system prompt requires the model's one-line reason to be
+grounded in what the item's own text actually says, not an assumed or generic connection.
 
-Without an API key, stage 1's matches are used directly (relevant=True, reason=the actual
-sentence the keyword was found in, quoted from the article/document body) — cruder than a
-real judgment call, but still grounded in the text itself rather than a bare keyword label,
-and keeps the prototype runnable with zero external dependencies.
+Without an ANTHROPIC_API_KEY, there's no model to make that judgment call, so this falls back
+to a crude keyword pre-filter (relevant=True, reason=the actual sentence the keyword was found
+in, quoted from the article/document body) — good enough to keep the prototype runnable with
+zero external dependencies, but not a substitute for the real classification above.
 """
 
 import json
@@ -23,10 +23,17 @@ from .sources.base import Item
 
 MODEL = "claude-haiku-4-5-20251001"
 BATCH_SIZE = 10
+# Matches the char cap sources already truncate full document/article text to (see
+# tap_legal_acts.FULL_TEXT_CHAR_LIMIT) — high enough that the model sees the actual
+# substance of an item, not just its title.
+DETAIL_CHAR_LIMIT = 4000
 
 # Definition of "startup-relevant" for this digest (see README for the full writeup):
 # funding & support programs, regulatory/legal/tax changes affecting startups or SMEs,
 # and government initiatives on innovation, digitalization or entrepreneurship.
+#
+# Used only by the no-API-key fallback path below — the real classification path sends
+# every item to the LLM and doesn't consult this list.
 KEYWORDS = [
     "jaunuzņēm", "start-up", "startup", "riska kapitāl", "venture", "inovāc",
     "inkubat", "akselerat", "atbalsta programm", "atbalsts uzņēmēj", "grant",
@@ -84,7 +91,20 @@ Mark an item RELEVANT if it involves any of:
 
 Mark it NOT relevant if it's routine administrative/personnel/ceremonial business, or concerns a
 sector with no plausible startup angle (e.g. agricultural subsidies unrelated to agtech,
-healthcare staffing, road maintenance).
+healthcare staffing, road maintenance). This includes general labor-market/social programs —
+e.g. requalification or activation measures for the unemployed, youth not in employment, or
+economically inactive people — even when the source text tacks on a generic line about
+supporting "entrepreneurship" or the "startup ecosystem": that connection only counts if the
+item's actual substance (funding mechanism, eligibility, regulatory change) is about startups
+or SMEs specifically, not general jobseekers or self-employment in general.
+
+Base your verdict strictly on what the item's own text says, not on what a program like this
+could plausibly also help with. If you have to reach or infer a startup connection the text
+itself doesn't make, mark it NOT relevant.
+
+Your one-line reason must point to something specific and concrete in the item's own text (the
+actual mechanism, amount, eligibility criterion, or clause) — never a generic assertion like
+"this is important for the startup ecosystem" with nothing in the item to back it up.
 
 Be decisive. Always write the one-line reason in Latvian, regardless of what language the
 source item is in — the digest this feeds is Latvian-only. Use the proper Latvian term
@@ -160,7 +180,7 @@ def _keyword_match(item: Item) -> tuple[str, str] | None:
 
 def _classify_batch_with_llm(client, batch: list[Item]) -> list[Classification]:
     prompt_items = "\n\n".join(
-        f"[{i}] Source: {it.source}\nTitle: {it.title}\nDetails: {it.raw_text[:2500]}"
+        f"[{i}] Source: {it.source}\nTitle: {it.title}\nDetails: {it.raw_text[:DETAIL_CHAR_LIMIT]}"
         for i, it in enumerate(batch)
     )
     message = client.messages.create(
@@ -195,14 +215,11 @@ def _classify_batch_with_llm(client, batch: list[Item]) -> list[Classification]:
 
 
 def classify_items(items: list[Item]) -> list[Classification]:
-    candidates = []
-    for item in items:
-        match = _keyword_match(item)
-        if match:
-            candidates.append((item, *match))
-
     api_key = os.environ.get("ANTHROPIC_API_KEY")
     if not api_key:
+        # No model available to judge relevance from context, so fall back to a keyword
+        # pre-filter — crude, but keeps the prototype runnable with zero external deps.
+        candidates = [(item, *m) for item in items if (m := _keyword_match(item))]
         return [
             Classification(
                 item=item,
@@ -218,9 +235,8 @@ def classify_items(items: list[Item]) -> list[Classification]:
 
     client = anthropic.Anthropic(api_key=api_key)
     results: list[Classification] = []
-    candidate_items = [item for item, _, _ in candidates]
-    for start in range(0, len(candidate_items), BATCH_SIZE):
-        batch = candidate_items[start : start + BATCH_SIZE]
+    for start in range(0, len(items), BATCH_SIZE):
+        batch = items[start : start + BATCH_SIZE]
         results.extend(_classify_batch_with_llm(client, batch))
 
     return [r for r in results if r.relevant]
