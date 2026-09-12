@@ -104,8 +104,11 @@ def _fetch_full_text(entry: dict, doc_version_map: dict[str, dict]) -> str:
     return ""
 
 
-def fetch_tap_legal_acts(since: date, today: date | None = None) -> list[Item]:
+def fetch_tap_legal_acts(
+    since: date, today: date | None = None, seen: set[str] | None = None
+) -> list[Item]:
     today = today or date.today()
+    seen = seen or set()
     items: list[Item] = []
 
     for resource_url in _relevant_resource_urls(since, today):
@@ -134,7 +137,10 @@ def fetch_tap_legal_acts(since: date, today: date | None = None) -> list[Item]:
             institution = attrs.get("responsible_institution_name", "")
             progress = attrs.get("progress_name", "")
             url = entry.get("links", {}).get("web", "")
-            full_text = _fetch_full_text(entry, doc_version_map)
+            # Status/progress can still change after we've first seen an act, so we always
+            # refetch that (cheap — it's already in this monthly JSON dump); the act's own
+            # text doesn't change once published, so skip re-fetching that expensively.
+            full_text = "" if url in seen else _fetch_full_text(entry, doc_version_map)
 
             items.append(
                 Item(

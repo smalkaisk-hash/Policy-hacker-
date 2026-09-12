@@ -49,14 +49,26 @@ fetch (7 sources, full text) → dedupe against local state → classify for rel
    vague to judge.
 2. **Dedupe** — `policy_digest/state.py` keeps `output/state.json`, a flat list of previously seen
    item URLs, so re-running only surfaces genuinely new items (this is what actually saves the
-   "5 hours/week of manual checking").
+   "5 hours/week of manual checking"). This dedupe check happens *inside* the fetch step, not just
+   after it: each fetcher is passed the seen-URL set and skips re-downloading an already-seen
+   item's full article/document body (the expensive part), since something already published
+   isn't going to change. Only the cheap listing/index page for each source is always re-checked,
+   to discover what's actually new. One consequence: for VSS/MK protocols specifically, an
+   already-fully-scraped meeting is skipped outright rather than re-parsed, so the "items
+   examined" count printed for those two sources reflects work done *this run*, not a stable
+   total — the dedupe/relevance results themselves aren't affected by this.
 3. **Classify** — `policy_digest/classify.py`:
    - a free keyword pre-filter cuts obviously unrelated items first;
    - if `ANTHROPIC_API_KEY` is set, surviving candidates go to **Claude Haiku** in small
      batches (structured tool-use call) for a real relevance judgment, confidence, one-line
      reason, and category;
-   - without a key, the keyword-filtered items are used directly (cruder, but keeps the tool
-     runnable with zero paid dependencies).
+   - without a key, the keyword-filtered items are used directly, with the reason built from
+     the actual matched text (the sentence the keyword was found in, quoted from the article/
+     document body, preferring the body over the title — a committee literally named "...
+     (nodokļu)..." would otherwise "match" on every single sitting regardless of that day's
+     real agenda) rather than a bare "keyword found" label. Cruder than a real LLM judgment
+     call, but still grounded in what the text actually says, and keeps the tool runnable with
+     zero paid dependencies.
 4. **Render** — `policy_digest/digest.py` writes a digest grouped by source, both as
    `output/digest_<date>.md` and a standalone `output/digest_<date>.html`.
 

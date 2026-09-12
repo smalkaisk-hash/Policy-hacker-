@@ -2,8 +2,8 @@
 """Policy monitoring digest — CLI entrypoint.
 
 Fetches recent items from TAP portāls, VSS, MK protocols, Ekonomikas
-ministrija and LIAA, classifies them for startup relevance, and writes a
-Markdown + HTML digest to output/.
+ministrija, LIAA, Altum, and Saeima committee sittings, classifies them for
+startup relevance, and writes a Markdown + HTML digest to output/.
 
 Usage:
     python run_digest.py [--days 7] [--no-state]
@@ -34,19 +34,34 @@ OUTPUT_DIR = ROOT / "output"
 STATE_PATH = OUTPUT_DIR / "state.json"
 
 SOURCES = [
-    ("TAP portāls", lambda since: fetch_tap_legal_acts(since)),
+    ("TAP portāls", lambda since, seen: fetch_tap_legal_acts(since, seen=seen)),
     (
         "Valsts sekretāru sanāksme",
-        lambda since: fetch_mk_meetings("state_secretaries", "Valsts sekretāru sanāksme", since),
+        lambda since, seen: fetch_mk_meetings(
+            "state_secretaries", "Valsts sekretāru sanāksme", since, seen=seen
+        ),
     ),
     (
         "Ministru kabineta protokoli",
-        lambda since: fetch_mk_meetings("cabinet_ministers", "Ministru kabineta protokoli", since),
+        lambda since, seen: fetch_mk_meetings(
+            "cabinet_ministers", "Ministru kabineta protokoli", since, seen=seen
+        ),
     ),
-    ("Ekonomikas ministrija", lambda since: fetch_news_listing("https://www.em.gov.lv", "Ekonomikas ministrija", since)),
-    ("LIAA", lambda since: fetch_news_listing("https://www.liaa.gov.lv", "LIAA", since)),
-    ("Altum", lambda since: fetch_altum_news(since)),
-    ("Saeimas komisiju darba kārtības", lambda since: fetch_saeima_committees(since)),
+    (
+        "Ekonomikas ministrija",
+        lambda since, seen: fetch_news_listing(
+            "https://www.em.gov.lv", "Ekonomikas ministrija", since, seen=seen
+        ),
+    ),
+    (
+        "LIAA",
+        lambda since, seen: fetch_news_listing("https://www.liaa.gov.lv", "LIAA", since, seen=seen),
+    ),
+    ("Altum", lambda since, seen: fetch_altum_news(since, seen=seen)),
+    (
+        "Saeimas komisiju darba kārtības",
+        lambda since, seen: fetch_saeima_committees(since, seen=seen),
+    ),
 ]
 
 
@@ -71,12 +86,12 @@ def main():
     for name, fetch_fn in SOURCES:
         print(f"Fetching {name}...")
         try:
-            items = fetch_fn(since)
+            items = fetch_fn(since, seen)
         except Exception as exc:  # keep going even if one source is temporarily down
             print(f"  ! failed to fetch {name}: {exc}")
             continue
         new_items = [it for it in items if it.url not in seen]
-        print(f"  {len(items)} item(s) in window, {len(new_items)} new since last run")
+        print(f"  {len(items)} item(s) examined, {len(new_items)} new since last run")
         all_new_items.extend(new_items)
 
     print(f"\nClassifying {len(all_new_items)} candidate item(s) for startup relevance...")

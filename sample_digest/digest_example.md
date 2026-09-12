@@ -1,58 +1,79 @@
-# Policy Digest — 2026-09-11
+# Policy Digest — 2026-09-12
 
-_Window: 2026-09-04 to 2026-09-11. "Startup-relevant" = funding/support programs (grants, EU funds, accelerator/incubator programs, LIAA/Altum initiatives), legal or regulatory changes affecting startups/SMEs/tech companies (company law, tax treatment, employee stock options, labor law, digital/AI regulation, public procurement), or draft legislation/initiatives on innovation, digitalization, and entrepreneurship._
+_Window: 2026-09-05 to 2026-09-12. "Startup-relevant" = funding/support programs (grants, EU funds, accelerator/incubator programs, LIAA/Altum initiatives), legal or regulatory changes affecting startups/SMEs/tech companies (company law, tax treatment, employee stock options, labor law, digital/AI regulation, public procurement), or draft legislation/initiatives on innovation, digitalization, and entrepreneurship._
 
-**22 relevant item(s) across 3 source(s).**
+**31 relevant item(s) across 4 source(s).**
 
 ## Ekonomikas ministrija (7)
 
 - **[Valainis ar ASV vēstnieku ES pārrunā abu valstu ekonomiskās sadarbības stiprināšanu MI un enerģētikas jautājumos](https://www.em.gov.lv/lv/jaunums/valainis-ar-asv-vestnieku-es-parruna-abu-valstu-ekonomiskas-sadarbibas-stiprinasanu-mi-un-energetikas-jautajumos)** — 2026-09-11 · _other_
-  Keyword match: "inovāc" (no ANTHROPIC_API_KEY set — keyword-only mode)
+  "…S konkurētspējas un regulējuma jautājumi. ASV vēstnieks ES sarunā uzsvēra, ka efektīvs un inovācijām labvēlīgs regulējums ir būtisks priekšnoteikums ekonomikas izaugsmei, konkurētspējai…" (matched "inovāc"; no ANTHROPIC_API_KEY set — keyword-only mode)
 - **[“NestAI” Latvijā investēs 10 miljonus eiro aizsardzības mākslīgā intelekta attīstībā](https://www.em.gov.lv/lv/jaunums/nestai-latvija-investes-10-miljonus-eiro-aizsardzibas-maksliga-intelekta-attistiba)** — 2026-09-11 · _other_
-  Keyword match: "inovāc" (no ANTHROPIC_API_KEY set — keyword-only mode)
+  "…ko noturību. “NestAI” iecere apliecina Latvijas potenciālu kļūt par nozīmīgu aizsardzības inovāciju un mākslīgā intelekta attīstības centru reģionā,” uzsver ekonomikas ministrs Viktors V…" (matched "inovāc"; no ANTHROPIC_API_KEY set — keyword-only mode)
 - **[Latvijas uzņēmēji Valsts prezidenta vizītes laikā dosies tirdzniecības misijā uz ASV](https://www.em.gov.lv/lv/jaunums/latvijas-uznemeji-valsts-prezidenta-vizites-laika-dosies-tirdzniecibas-misija-uz-asv)** — 2026-09-10 · _other_
-  Keyword match: "jaunuzņēm" (no ANTHROPIC_API_KEY set — keyword-only mode)
+  "…tiks pievērsta aizsardzības un divējāda lietojuma tehnoloģijām, biomedicīnai, farmācijai, jaunuzņēmumiem un filmu industrijai. Tirdzniecības misijas mērķis ir palīdzēt Latvijas uzņēmumiem v…" (matched "jaunuzņēm"; no ANTHROPIC_API_KEY set — keyword-only mode)
 - **[Jūlijā turpināja strauji augt gan preču eksports, gan imports](https://www.em.gov.lv/lv/jaunums/julija-turpinaja-strauji-augt-gan-precu-eksports-gan-imports)** — 2026-09-10 · _other_
-  Keyword match: "eksport" (no ANTHROPIC_API_KEY set — keyword-only mode)
+  "Jūlijā preču eksports pieauga par 14,9%, kas ir otrais divciparu pieaugums pēc kārtas pēc jūnijā sasniegtajiem…" (matched "eksport"; no ANTHROPIC_API_KEY set — keyword-only mode)
 - **[Neraugoties uz pārtikas cenu kritumu, augustā inflāciju veicināja dārgāka degviela](https://www.em.gov.lv/lv/jaunums/neraugoties-uz-partikas-cenu-kritumu-augusta-inflaciju-veicinaja-dargaka-degviela)** — 2026-09-09 · _other_
-  Keyword match: "nodokļ" (no ANTHROPIC_API_KEY set — keyword-only mode)
+  "…attīstība. Vienlaikus inflāciju Latvijā turpinās ietekmēt regulēto tarifu pārskatīšana un nodokļu izmaiņas, kā arī pieprasījuma puse, ko veicina atalgojuma pieaugums. Saglabājoties augst…" (matched "nodokļ"; no ANTHROPIC_API_KEY set — keyword-only mode)
 - **[Latvijas uzņēmēji Berlīnē stiprinās sadarbību ar Vācijas tehnoloģiju un rūpniecības līderiem](https://www.em.gov.lv/lv/jaunums/latvijas-uznemeji-berline-stiprinas-sadarbibu-ar-vacijas-tehnologiju-un-rupniecibas-lideriem)** — 2026-09-07 · _other_
-  Keyword match: "inovāc" (no ANTHROPIC_API_KEY set — keyword-only mode)
+  "…LIAA) organizētā tirdzniecības misijā Berlīnē tiksies ar Vācijas uzņēmumiem, investoriem, inovāciju centriem un pētniecības organizācijām. 16. un 17. septembrī uzņēmēju delegācijas progr…" (matched "inovāc"; no ANTHROPIC_API_KEY set — keyword-only mode)
 - **[Aicinām iedzīvotājus izvēlēties savu favorītu energoefektīvākās ēkas konkursā](https://www.em.gov.lv/lv/jaunums/aicinam-iedzivotajus-izveleties-savu-favoritu-energoefektivakas-ekas-konkursa)** — 2026-09-07 · _other_
-  Keyword match: "es fond" (no ANTHROPIC_API_KEY set — keyword-only mode)
+  "…ldītājs Possessor” un Centrālo finanšu un līgumu aģentūru. Konkurss tiek līdzfinansēts no ES fondu līdzekļiem. Konkursa atbalstītāji ir SIA „Paroc”, SIA „Saint-Gobain Celtniecības produkt…" (matched "es fond"; no ANTHROPIC_API_KEY set — keyword-only mode)
 
-## LIAA (8)
+## LIAA (7)
 
 - **[“NestAI” paplašina darbību Latvijā, lai attīstītu aizsardzības mākslīgo intelektu NATO austrumu flangā](https://www.liaa.gov.lv/lv/jaunums/nestai-paplasina-darbibu-latvija-lai-attistitu-aizsardzibas-maksligo-intelektu-nato-austrumu-flanga)** — 2026-09-11 · _other_
-  Keyword match: "investīcij" (no ANTHROPIC_API_KEY set — keyword-only mode)
+  "…sardzībā. ““NestAI” lēmums veidot pētniecības un attīstības centru Latvijā ir stratēģiska investīcija nozarē ar augstu izaugsmes potenciālu. Plānotie 10 miljoni eiro un 30 jaunas darbvietas…" (matched "investīcij"; no ANTHROPIC_API_KEY set — keyword-only mode)
 - **[Norvēģijas finanšu instrumenta 2021.-2028. gada plānošanas periods](https://www.liaa.gov.lv/lv/jaunums/norvegijas-finansu-instrumenta-2021-2028-gada-planosanas-periods)** — 2026-09-11 · _other_
-  Keyword match: "jaunuzņēm" (no ANTHROPIC_API_KEY set — keyword-only mode)
+  "…enerģijas, biodegvielu un ūdeņraža tehnoloģiju attīstībā. Programma ietvers arī atbalstu jaunuzņēmumiem un sievietēm uzņēmējām. Programmas jomas: Zaļā uzņēmējdarbība un inovācijas. Program…" (matched "jaunuzņēm"; no ANTHROPIC_API_KEY set — keyword-only mode)
 - **[Latvijas uzņēmēji Valsts prezidenta vizītes laikā dosies tirdzniecības misijā uz ASV](https://www.liaa.gov.lv/lv/jaunums/latvijas-uznemeji-valsts-prezidenta-vizites-laika-dosies-tirdzniecibas-misija-uz-asv)** — 2026-09-10 · _other_
-  Keyword match: "jaunuzņēm" (no ANTHROPIC_API_KEY set — keyword-only mode)
+  "…tiks pievērsta aizsardzības un divējāda lietojuma tehnoloģijām, biomedicīnai, farmācijai, jaunuzņēmumiem un filmu industrijai. Tirdzniecības misijas mērķis ir palīdzēt Latvijas uzņēmumiem v…" (matched "jaunuzņēm"; no ANTHROPIC_API_KEY set — keyword-only mode)
 - **[LIAA piedāvā rīku, kas palīdz uzņēmējiem atrast piemērotāko atbalstu](https://www.liaa.gov.lv/lv/jaunums/liaa-piedava-riku-kas-palidz-uznemejiem-atrast-piemerotako-atbalstu)** — 2026-09-10 · _other_
-  Keyword match: "atbalsta programm" (no ANTHROPIC_API_KEY set — keyword-only mode)
+  "…ku " Latvijas biznesa atbalsta vedni ", kas palīdz atrast uzņēmuma vajadzībām atbilstošas atbalsta programmas un iniciatīvas. Norādot uzņēmuma attīstības posmu, statusu un aktuālo vajadzību, uzņēmē…" (matched "atbalsta programm"; no ANTHROPIC_API_KEY set — keyword-only mode)
 - **[No prototipa līdz eksporta tirgum: LIAA atver rudens uzņemšanu Biznesa inkubācijas programmā](https://www.liaa.gov.lv/lv/jaunums/no-prototipa-lidz-eksporta-tirgum-liaa-atver-rudens-uznemsanu-biznesa-inkubacijas-programma)** — 2026-09-09 · _other_
-  Keyword match: "inovāc" (no ANTHROPIC_API_KEY set — keyword-only mode)
+  "…dā divējāda lietojuma produktus, kā arī citu atbalstāmo nozaru komersanti ar eksporta vai inovāciju potenciālu. “Uzņēmuma pirmajos darbības gados izšķiroša ir spēja ātri pārbaudīt savu b…" (matched "inovāc"; no ANTHROPIC_API_KEY set — keyword-only mode)
 - **[Latvijas uzņēmēji Berlīnē stiprinās sadarbību ar Vācijas tehnoloģiju un rūpniecības līderiem](https://www.liaa.gov.lv/lv/jaunums/latvijas-uznemeji-berline-stiprinas-sadarbibu-ar-vacijas-tehnologiju-un-rupniecibas-lideriem)** — 2026-09-07 · _other_
-  Keyword match: "inovāc" (no ANTHROPIC_API_KEY set — keyword-only mode)
+  "…LIAA) organizētā tirdzniecības misijā Berlīnē tiksies ar Vācijas uzņēmumiem, investoriem, inovāciju centriem un pētniecības organizācijām. 16. un 17. septembrī uzņēmēju delegācijas progr…" (matched "inovāc"; no ANTHROPIC_API_KEY set — keyword-only mode)
 - **[Sākusies pieteikšanās “Jauno uzņēmēju skolā 2026” piecās Latvijas pilsētās](https://www.liaa.gov.lv/lv/jaunums/sakusies-pieteiksanas-jauno-uznemeju-skola-2026-piecas-latvijas-pilsetas)** — 2026-09-07 · _other_
-  Keyword match: "inovāc" (no ANTHROPIC_API_KEY set — keyword-only mode)
-- **[Vēl līdz 10. septembrim var pieteikties “Eksporta un inovācijas balvai 2026”](https://www.liaa.gov.lv/lv/jaunums/vel-lidz-10-septembrim-var-pieteikties-eksporta-un-inovacijas-balvai-2026)** — 2026-09-04 · _other_
-  Keyword match: "inovāc" (no ANTHROPIC_API_KEY set — keyword-only mode)
+  "Ir sākusies skolēnu un pedagogu pieteikšanās reģionālajām darbnīcām par inovāciju un ideju ģenerēšanu “Jauno uzņēmēju skola 2026”, ko rīko Latvijas Investīciju un attīs…" (matched "inovāc"; no ANTHROPIC_API_KEY set — keyword-only mode)
+
+## Ministru kabineta protokoli (10)
+
+- **[Rīkojuma projekts "Par finansējumu rehabilitācijas pakalpojumu nodrošināšanai"](https://tapportals.mk.gov.lv/meetings/protocols/c4f5b0fb-b24b-42bc-a36b-701cef63e393#meeting-protocol-preview-4)** — 2026-09-08 · _other_
+  "…2027. gadā no budžeta resora "74. Gadskārtējā valsts budžeta izpildes procesā pārdalāmais finansējums" apakšprogrammas 74.02.01.00 "Līdzekļi neparedzētiem gadījumiem", nepārsniedzot 1 174 96…" (matched "finansējum"; no ANTHROPIC_API_KEY set — keyword-only mode)
+- **[Rīkojuma projekts "Par apropriācijas pārdali no budžeta resora "74. Gadskārtējā valsts budžeta izpildes procesā pārdalāmais finansējums" programmas 24.00.00 "Valsts aizsardzības un drošības fonds""](https://tapportals.mk.gov.lv/meetings/protocols/c4f5b0fb-b24b-42bc-a36b-701cef63e393#meeting-protocol-preview-6)** — 2026-09-08 · _other_
+  "…īt Aizsardzības ministrijas priekšlikumu par bāzes izdevumu precizēšanu: 3. 1. palielināt finansējumu Aizsardzības ministrijas budžeta apakšprogrammā 10.01.01.00 "Aizsardzības spēju attīstīb…" (matched "finansējum"; no ANTHROPIC_API_KEY set — keyword-only mode)
+- **[Noteikumu projekts "Noteikumi par uzņēmējdarbības riska valsts nodevu 2027. gadā"](https://tapportals.mk.gov.lv/meetings/protocols/c4f5b0fb-b24b-42bc-a36b-701cef63e393#meeting-protocol-preview-15)** — 2026-09-08 · _other_
+  "Noteikumu projekts "Noteikumi par uzņēmējdarbības riska valsts nodevu 2027. gadā" (No sēdes: Ministru kabineta 08.09.2026. sēde (sēdes s…" (matched "uzņēmējdarbīb"; no ANTHROPIC_API_KEY set — keyword-only mode)
+- **[Noteikumu projekts "Noteikumi par valsts pārbaudes darbu norises laiku 2026./2027. mācību gadā"](https://tapportals.mk.gov.lv/meetings/protocols/c4f5b0fb-b24b-42bc-a36b-701cef63e393#meeting-protocol-preview-21)** — 2026-09-08 · _other_
+  "…temātikā, fizikā, ķīmijā un citās dabaszinātnēs, tas ir pamats mūsu ekonomikas izaugsmei, inovācijām un konkurētspējai. Taču tieši tādēļ es uzskatu, ka obligātā dabaszinību eksāmena ievi…" (matched "inovāc"; no ANTHROPIC_API_KEY set — keyword-only mode)
+- **[Noteikumu projekts "Grozījumi Ministru kabineta 2025. gada 22. decembra noteikumos Nr. 846 "Eiropas Savienības kohēzijas politikas programmas 2021.–2027. gadam 4.3.3. specifiskā atbalsta mērķa "Uzlabot visu darba meklētāju, jo īpaši jauniešu – it sevišķi, īstenojot Garantiju jauniešiem –, ilgstošo bezdarbnieku un darba tirgū nelabvēlīgā situācijā esošo grupu, un ekonomiski neaktīvo personu piekļuvi nodarbinātībai un aktivizācijas pasākumiem, kā arī veicinot pašnodarbinātību un sociālo ekonomiku" 4.3.3.1. pasākuma "Bezdarbnieku, darba meklētāju un bezdarba riskam pakļauto personu kvalifikācijas un prasmju paaugstināšana" īstenošanas noteikumi""](https://tapportals.mk.gov.lv/meetings/protocols/c4f5b0fb-b24b-42bc-a36b-701cef63e393#meeting-protocol-preview-25)** — 2026-09-08 · _other_
+  "…no Eiropas Savienības kohēzijas politikas programmas 2021.-2027. gadam 4.3.3.1. pasākuma finansējuma."." (matched "finansējum"; no ANTHROPIC_API_KEY set — keyword-only mode)
+- **[Informatīvais ziņojums "Par vienotu pārvaldību, nodrošinot pieaugušo izglītības atbalsta pasākumus cilvēkkapitāla attīstībai"](https://tapportals.mk.gov.lv/meetings/protocols/c4f5b0fb-b24b-42bc-a36b-701cef63e393#meeting-protocol-preview-40)** — 2026-09-08 · _other_
+  "…s ministriju un Labklājības ministriju līdz 2027. gada 30. jūnijam sagatavot nepieciešamo investīciju kartējumu pieaugušo izglītībā 2028.–2034. gada plānošanas periodam nozaru un potenciālo…" (matched "investīcij"; no ANTHROPIC_API_KEY set — keyword-only mode)
+- **[Informatīvais ziņojums "Par bāzes pensijas attīstības iecerēm"](https://tapportals.mk.gov.lv/meetings/protocols/c4f5b0fb-b24b-42bc-a36b-701cef63e393#meeting-protocol-preview-43)** — 2026-09-08 · _other_
+  "…un budžeta ietvaru 2027., 2028., 2029. un 2030. gadam" sagatavošanas procesā, ja ir rasts finansējums (kompensējošie pasākumi) to īstenošanai." (matched "finansējum"; no ANTHROPIC_API_KEY set — keyword-only mode)
+- **[Informatīvais ziņojums "Par atļauju Iekšlietu ministrijai (Nodokļu un muitas policijai) uzņemties valsts budžeta ilgtermiņa saistības un īstenot Eiropas Savienības programmas  "Savienības Krāpšanas apkarošanas programma" (Union Anti-Fraud Programme (EUAF)) līdzfinansēto projektu "Pārliecinošu pierādījumu iegūšana, izmantojot jaunākās novērošanas sistēmas""](https://tapportals.mk.gov.lv/meetings/protocols/c4f5b0fb-b24b-42bc-a36b-701cef63e393#meeting-protocol-preview-44)** — 2026-09-08 · _other_
+  "…gs) 1. Pieņemt zināšanai iesniegto informatīvo ziņojumu. 2. Atļaut Iekšlietu ministrijai (Nodokļu un muitas policijai) uzņemties papildu valsts budžeta ilgtermiņa saistības Eiropas Savie…" (matched "nodokļ"; no ANTHROPIC_API_KEY set — keyword-only mode)
+- **[Atbildes projekts Saeimas Budžeta un finanšu (nodokļu) komisijai (par informatīvā ziņojuma sniegšanu saistībā ar Naftas produktu cenu pieauguma ierobežošanas likuma īstenošanu)](https://tapportals.mk.gov.lv/meetings/protocols/c4f5b0fb-b24b-42bc-a36b-701cef63e393#meeting-protocol-preview-46)** — 2026-09-08 · _other_
+  "…inskis, A. Kulbergs) 1. Atbalstīt iesniegto atbildes projektu Saeimas Budžeta un finanšu (nodokļu) komisijai un tam pievienoto informatīvo ziņojumu. 2. Valsts kancelejai noformēt un nosū…" (matched "nodokļ"; no ANTHROPIC_API_KEY set — keyword-only mode)
+- **[Atbildes projekts Saeimas Sociālo un darba lietu komisijas Sabiedrības veselības apakškomisijai (par veselības aprūpes finansējuma palielināšanu)](https://tapportals.mk.gov.lv/meetings/protocols/c4f5b0fb-b24b-42bc-a36b-701cef63e393#meeting-protocol-preview-47)** — 2026-09-08 · _other_
+  "…iālo un darba lietu komisijas Sabiedrības veselības apakškomisijai (par veselības aprūpes finansējuma palielināšanu) (No sēdes: Ministru kabineta 08.09.2026. sēde (sēdes sākums plkst.14.00)…" (matched "finansējum"; no ANTHROPIC_API_KEY set — keyword-only mode)
 
 ## Saeimas komisiju darba kārtības (7)
 
 - **[Cilvēktiesību un sabiedrisko lietu komisijas Latgales apakškomisijas sēde](https://titania.saeima.lv/livs/saeimasnotikumi.nsf/0/99A0B29BD25203F6C2258E60002059D1?OpenDocument)** — 2026-09-11 · _other_
-  Keyword match: "inovāc" (no ANTHROPIC_API_KEY set — keyword-only mode)
+  "…ecības un rūpniecības kameras Latgales reģionālo padomi. "Augstākā izglītība, pētniecība, inovācijas un profesionālā izglītība Latgalē. Pieprasījums un atbilstība reģiona izaugsmes izaic…" (matched "inovāc"; no ANTHROPIC_API_KEY set — keyword-only mode)
 - **[Budžeta un finanšu (nodokļu) komisijas sēde](https://titania.saeima.lv/livs/saeimasnotikumi.nsf/0/1B79FCB852603E36C2258E6D004B111F?OpenDocument)** — 2026-09-10 · _other_
-  Keyword match: "nodokļ" (no ANTHROPIC_API_KEY set — keyword-only mode)
+  "Budžeta un finanšu (nodokļu) komisijas sēde 1. Likumprojekts “ Grozījumi Starptautisko un Latvijas Republikas nacio…" (matched "nodokļ"; no ANTHROPIC_API_KEY set — keyword-only mode)
 - **[Budžeta un finanšu (nodokļu) komisijas sēde](https://titania.saeima.lv/livs/saeimasnotikumi.nsf/0/6F7C1AA20FEA7CBCC2258E6600492A62?OpenDocument)** — 2026-09-09 · _other_
-  Keyword match: "nodokļ" (no ANTHROPIC_API_KEY set — keyword-only mode)
+  "…pārstāvis , Balcia Insurance SE pārstāvis. 8. Likumprojekts “ Grozījumi Uzņēmumu ienākuma nodokļa likumā ” (Nr.1449/Lp14; Dok.nr.5123; 1 .lasījums). Uzaicināti: Satiksmes ministrijas pār…" (matched "nodokļ"; no ANTHROPIC_API_KEY set — keyword-only mode)
 - **[Ārlietu komisijas Baltijas lietu apakškomisijas sēde](https://titania.saeima.lv/livs/saeimasnotikumi.nsf/0/9DB22461AEA075AEC2258E68002CEB22?OpenDocument)** — 2026-09-09 · _other_
-  Keyword match: "inovāc" (no ANTHROPIC_API_KEY set — keyword-only mode)
+  "…ietu aizpildīšana. 2. Kandidāta nominēšana Baltijas Asamblejas Ekonomikas, enerģētikas un inovāciju komitejas priekšsēdētāja vietnieka pienākumu izpildītājam. 3.Gatavošanās Baltijas Asam…" (matched "inovāc"; no ANTHROPIC_API_KEY set — keyword-only mode)
 - **[Budžeta un finanšu (nodokļu) komisijas sēde](https://titania.saeima.lv/livs/saeimasnotikumi.nsf/0/ECC79249FC0FABA7C2258E66004945CA?OpenDocument)** — 2026-09-08 · _other_
-  Keyword match: "nodokļ" (no ANTHROPIC_API_KEY set — keyword-only mode)
+  "1. Likumprojekts “Grozījumi Mikrouzņēmumu nodokļa likumā ” (Nr.1407/Lp14; 3.lasījums, turpinājums ). 2. Likumprojekts “Grozījumi likumā “P…" (matched "nodokļ"; no ANTHROPIC_API_KEY set — keyword-only mode)
 - **[Publisko izdevumu un revīzijas komisijas sēde](https://titania.saeima.lv/livs/saeimasnotikumi.nsf/0/AC2732929FAFAD1FC2258E670042A1B7?OpenDocument)** — 2026-09-08 · _other_
-  Keyword match: "iepirkum" (no ANTHROPIC_API_KEY set — keyword-only mode)
+  "…-2027.gadam noteikto katastrofu pārvaldības centru attīstību, finansējumu un publiskajiem iepirkumiem. Uzaicināti: Iekšlietu ministrija, Nodrošinājuma valsts aģentūra, Valsts kontrole, Lat…" (matched "iepirkum"; no ANTHROPIC_API_KEY set — keyword-only mode)
 - **[Cilvēktiesību un sabiedrisko lietu komisijas Latgales apakškomisijas sēde](https://titania.saeima.lv/livs/saeimasnotikumi.nsf/0/D4797C3D060E3035C2258E5E00302462?OpenDocument)** — 2026-09-08 · _other_
-  Keyword match: "uzņēmējdarbīb" (no ANTHROPIC_API_KEY set — keyword-only mode)
+  "1. Uzņēmējdarbības atbalsta pasākumi pašvaldībām: sasniedzamie rādītāji, to izpilde un pierobežas teritori…" (matched "uzņēmējdarbīb"; no ANTHROPIC_API_KEY set — keyword-only mode)

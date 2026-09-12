@@ -29,8 +29,13 @@ def _fetch_article_body(url: str) -> str:
 
 
 def fetch_news_listing(
-    base_url: str, source_name: str, since: date, listing_path: str = "/lv/jaunumi"
+    base_url: str,
+    source_name: str,
+    since: date,
+    listing_path: str = "/lv/jaunumi",
+    seen: set[str] | None = None,
 ) -> list[Item]:
+    seen = seen or set()
     items: list[Item] = []
 
     for page in range(MAX_PAGES):
@@ -65,7 +70,9 @@ def fetch_news_listing(
             href = link["href"]
             full_url = href if href.startswith("http") else base_url + href
             summary = summary_tag.get_text(strip=True) if summary_tag else ""
-            body = _fetch_article_body(full_url)
+            # Already scraped this article's full body in a previous run — it won't have
+            # changed, so don't re-fetch it.
+            body = "" if full_url in seen else _fetch_article_body(full_url)
 
             items.append(
                 Item(

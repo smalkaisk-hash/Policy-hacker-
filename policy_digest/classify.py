@@ -8,13 +8,15 @@ Two stages:
    Claude Haiku in small batches for a real judgment call + a one-line reason,
    using tool-use so the response is structured JSON, not free text to parse.
 
-Without an API key, stage 1's matches are used directly (relevant=True,
-reason="keyword match: <keyword>") — cruder, but keeps the prototype runnable
-with zero external dependencies.
+Without an API key, stage 1's matches are used directly (relevant=True, reason=the actual
+sentence the keyword was found in, quoted from the article/document body) — cruder than a
+real judgment call, but still grounded in the text itself rather than a bare keyword label,
+and keeps the prototype runnable with zero external dependencies.
 """
 
 import json
 import os
+import re
 from dataclasses import dataclass
 
 from .sources.base import Item
@@ -96,11 +98,33 @@ class Classification:
     category: str
 
 
-def _keyword_match(item: Item) -> str | None:
-    text = f"{item.title}\n{item.raw_text}".lower()
+def _snippet_around(text: str, keyword: str, radius: int = 90) -> str:
+    idx = text.lower().find(keyword)
+    start = max(0, idx - radius)
+    end = min(len(text), idx + len(keyword) + radius)
+    snippet = re.sub(r"\s+", " ", text[start:end]).strip()
+    return f"{'…' if start > 0 else ''}{snippet}{'…' if end < len(text) else ''}"
+
+
+def _keyword_match(item: Item) -> tuple[str, str] | None:
+    """Returns (keyword, context_snippet) — the snippet is quoted straight from the
+    fetched article/document body so the reason reflects what the text actually says,
+    not just that a word appeared somewhere. Body content is preferred over the title:
+    e.g. a standing committee named "...(nodokļu)..." would otherwise "match" on every
+    single sitting regardless of that day's actual agenda.
+    """
+    # raw_text is built as "{title}\n\n{body...}" by every source module.
+    split_at = item.raw_text.find("\n\n")
+    body = item.raw_text[split_at + 2 :] if split_at != -1 else ""
+
     for kw in KEYWORDS:
-        if kw in text:
-            return kw
+        if kw in body.lower():
+            return kw, _snippet_around(body, kw)
+
+    for kw in KEYWORDS:
+        if kw in item.raw_text.lower():
+            return kw, _snippet_around(item.raw_text, kw)
+
     return None
 
 
@@ -143,9 +167,9 @@ def _classify_batch_with_llm(client, batch: list[Item]) -> list[Classification]:
 def classify_items(items: list[Item]) -> list[Classification]:
     candidates = []
     for item in items:
-        kw = _keyword_match(item)
-        if kw:
-            candidates.append((item, kw))
+        match = _keyword_match(item)
+        if match:
+            candidates.append((item, *match))
 
     api_key = os.environ.get("ANTHROPIC_API_KEY")
     if not api_key:
@@ -154,17 +178,17 @@ def classify_items(items: list[Item]) -> list[Classification]:
                 item=item,
                 relevant=True,
                 confidence=0.5,
-                reason=f'Keyword match: "{kw}" (no ANTHROPIC_API_KEY set — keyword-only mode)',
+                reason=f'"{snippet}" (matched "{kw}"; no ANTHROPIC_API_KEY set — keyword-only mode)',
                 category="other",
             )
-            for item, kw in candidates
+            for item, kw, snippet in candidates
         ]
 
     import anthropic
 
     client = anthropic.Anthropic(api_key=api_key)
     results: list[Classification] = []
-    candidate_items = [item for item, _ in candidates]
+    candidate_items = [item for item, _, _ in candidates]
     for start in range(0, len(candidate_items), BATCH_SIZE):
         batch = candidate_items[start : start + BATCH_SIZE]
         results.extend(_classify_batch_with_llm(client, batch))

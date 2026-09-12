@@ -48,10 +48,13 @@ def _fetch_full_text(unid: str) -> str:
     return node.get_text(" ", strip=True) if node else ""
 
 
-def fetch_saeima_committees(since: date, today: date | None = None) -> list[Item]:
+def fetch_saeima_committees(
+    since: date, today: date | None = None, seen: set[str] | None = None
+) -> list[Item]:
     today = today or date.today()
+    seen = seen or set()
     items: list[Item] = []
-    seen_unids: set[str] = set()
+    seen_unids: set[str] = set()  # within this run only, to dedupe across day queries
 
     for day in _daterange(since, today):
         if len(items) >= MAX_MEETINGS:
@@ -71,8 +74,10 @@ def fetch_saeima_committees(since: date, today: date | None = None) -> list[Item
             seen_unids.add(unid)
 
             title = raw_title.strip()
-            full_text = _fetch_full_text(unid)
             doc_url = f"{BASE}/0/{unid}?OpenDocument"
+            # Already scraped this sitting's full agenda in a previous run — it's a past
+            # meeting now, so its text won't change.
+            full_text = "" if doc_url in seen else _fetch_full_text(unid)
 
             items.append(
                 Item(

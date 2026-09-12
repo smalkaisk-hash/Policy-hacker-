@@ -8,7 +8,8 @@ digest but means a lookback window older than that won't find everything;
 see README.
 """
 
-from datetime import date, datetime
+import re
+from datetime import date
 
 import requests
 from bs4 import BeautifulSoup
@@ -20,11 +21,27 @@ LISTING_URL = f"{BASE_URL}/par-altum/aktualitates/"
 HEADERS = {"User-Agent": "Mozilla/5.0 (policy-digest prototype; +startin.lv test task)"}
 SOURCE_NAME = "Altum"
 
+# Month abbreviations are always English on this site regardless of server/
+# process locale, so map them explicitly instead of relying on the
+# locale-dependent %b strptime directive.
+_MONTHS = {
+    "Jan": 1, "Feb": 2, "Mar": 3, "Apr": 4, "May": 5, "Jun": 6,
+    "Jul": 7, "Aug": 8, "Sep": 9, "Oct": 10, "Nov": 11, "Dec": 12,
+}
+_DATE_RE = re.compile(r"(\d{1,2})\.\s*([A-Za-z]{3}),\s*(\d{4})")
+
 
 def _parse_date(text: str) -> date | None:
-    # e.g. "02. Sep, 2026" -> 2026-09-02 (month abbreviations are in English on this site)
+    # e.g. "02. Sep, 2026" -> 2026-09-02
+    match = _DATE_RE.search(text.strip())
+    if not match:
+        return None
+    day, month_abbr, year = match.groups()
+    month = _MONTHS.get(month_abbr[:3].title())
+    if month is None:
+        return None
     try:
-        return datetime.strptime(text.strip(), "%d. %b, %Y").date()
+        return date(int(year), month, int(day))
     except ValueError:
         return None
 
@@ -40,7 +57,8 @@ def _fetch_article_body(url: str) -> str:
     return node.get_text(" ", strip=True) if node else ""
 
 
-def fetch_altum_news(since: date) -> list[Item]:
+def fetch_altum_news(since: date, seen: set[str] | None = None) -> list[Item]:
+    seen = seen or set()
     resp = requests.get(LISTING_URL, headers=HEADERS, timeout=30)
     resp.raise_for_status()
     soup = BeautifulSoup(resp.text, "html.parser")
@@ -58,8 +76,9 @@ def fetch_altum_news(since: date) -> list[Item]:
             continue
 
         title = text_tag.get_text(strip=True) if text_tag else link_tag.get_text(strip=True)
-        url = link_tag["href"]
-        body = _fetch_article_body(url)
+        href = link_tag["href"]
+        url = href if href.startswith("http") else BASE_URL + href
+        body = "" if url in seen else _fetch_article_body(url)
 
         items.append(
             Item(

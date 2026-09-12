@@ -67,7 +67,10 @@ def _fetch_protocol_items(protocol_url: str, meeting_title: str) -> list[tuple[s
     return results
 
 
-def fetch_mk_meetings(meeting_type: str, source_name: str, since: date) -> list[Item]:
+def fetch_mk_meetings(
+    meeting_type: str, source_name: str, since: date, seen: set[str] | None = None
+) -> list[Item]:
+    seen = seen or set()
     items: list[Item] = []
     listing_base = f"{BASE_URL}/meetings/{meeting_type}"
 
@@ -100,6 +103,10 @@ def fetch_mk_meetings(meeting_type: str, source_name: str, since: date) -> list[
 
             if protocol_link:
                 protocol_url = BASE_URL + protocol_link["href"]
+                if any(u.startswith(protocol_url) for u in seen):
+                    # Already scraped this protocol in a previous run — protocols don't
+                    # change once published, so there's nothing new to fetch here.
+                    continue
                 for item_title, item_url, full_text in _fetch_protocol_items(protocol_url, meeting_title):
                     raw_text = f"{item_title}\n\n(No sēdes: {meeting_title})"
                     if full_text:
