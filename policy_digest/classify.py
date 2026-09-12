@@ -27,6 +27,18 @@ BATCH_SIZE = 10
 # tap_legal_acts.FULL_TEXT_CHAR_LIMIT) — high enough that the model sees the actual
 # substance of an item, not just its title.
 DETAIL_CHAR_LIMIT = 4000
+# Some sources (esp. mk_meetings' protocol pages) sometimes only expose a short procedural
+# line ("accepted the draft, forwarded for signing") rather than the regulation's actual
+# content — below this length there's nothing substantive to judge from, so we flag it as
+# such rather than let the model quietly guess from the title alone.
+MIN_SUBSTANTIVE_BODY_LEN = 150
+NO_BODY_MARKER = (
+    "[SATURS NAV PIEEJAMS ŠIM IERAKSTAM — pieejams tikai nosaukums (un, iespējams, īss "
+    "procesuāls ieraksts, piem. 'pieņemts, virzīt parakstīšanai', kas neko neatklāj par "
+    "satura būtību). NEIZDOMĀ un NEPIEŅEM, ko šis akts varētu regulēt — ja nosaukums pats "
+    "par sevi nepārprotami nenorāda uz jaunuzņēmumu/MVU atbalstu vai regulējumu, atzīmē "
+    "NOT relevant.]"
+)
 
 # Definition of "startup-relevant" for this digest (see README for the full writeup):
 # funding & support programs, regulatory/legal/tax changes affecting startups or SMEs,
@@ -102,6 +114,19 @@ Base your verdict strictly on what the item's own text says, not on what a progr
 could plausibly also help with. If you have to reach or infer a startup connection the text
 itself doesn't make, mark it NOT relevant.
 
+Reject category-level truisms as a basis for relevance — "startups are companies, and this
+affects companies" or "startups need X, and this concerns X in general" is not a real
+connection. A law, fee, or duty that applies identically to every company regardless of size
+or stage (e.g. a universal per-employee levy, a standard filing fee) is NOT relevant just
+because startups happen to be companies too — it would need to say something specific about
+early-stage/small companies, not merely apply to "uzņēmumi" as a category. Likewise, a
+government agency's routine budget approval is NOT relevant merely because the agency's
+general mandate (e.g. patents, standards, licensing) is something startups also rely on —
+approving next year's line-item budget doesn't change what startups can or can't do. Watch
+for hedge words in your own reasoning ("could potentially", "may affect", "is relevant to
+X in general") — if that's the strongest connection you can state, the honest verdict is NOT
+relevant, not relevant-with-caveats.
+
 Your one-line reason must point to something specific and concrete in the item's own text (the
 actual mechanism, amount, eligibility criterion, or clause) — never a generic assertion like
 "this is important for the startup ecosystem" with nothing in the item to back it up.
@@ -156,6 +181,13 @@ def _snippet_around(text: str, keyword: str) -> str:
     return text[:_SNIPPET_MAX_LEN].strip()
 
 
+def _body_text(item: Item) -> str:
+    """Everything in raw_text after the title — raw_text is built as "{title}\n\n{body...}"
+    by every source module."""
+    split_at = item.raw_text.find("\n\n")
+    return item.raw_text[split_at + 2 :] if split_at != -1 else ""
+
+
 def _keyword_match(item: Item) -> tuple[str, str] | None:
     """Returns (keyword, context_snippet) — the snippet is quoted straight from the
     fetched article/document body so the reason reflects what the text actually says,
@@ -163,9 +195,7 @@ def _keyword_match(item: Item) -> tuple[str, str] | None:
     e.g. a standing committee named "...(nodokļu)..." would otherwise "match" on every
     single sitting regardless of that day's actual agenda.
     """
-    # raw_text is built as "{title}\n\n{body...}" by every source module.
-    split_at = item.raw_text.find("\n\n")
-    body = item.raw_text[split_at + 2 :] if split_at != -1 else ""
+    body = _body_text(item)
 
     for kw in KEYWORDS:
         if kw in body.lower():
@@ -178,9 +208,16 @@ def _keyword_match(item: Item) -> tuple[str, str] | None:
     return None
 
 
+def _item_detail_text(item: Item) -> str:
+    body = _body_text(item)
+    if len(body) < MIN_SUBSTANTIVE_BODY_LEN:
+        return NO_BODY_MARKER
+    return item.raw_text[:DETAIL_CHAR_LIMIT]
+
+
 def _classify_batch_with_llm(client, batch: list[Item]) -> list[Classification]:
     prompt_items = "\n\n".join(
-        f"[{i}] Source: {it.source}\nTitle: {it.title}\nDetails: {it.raw_text[:DETAIL_CHAR_LIMIT]}"
+        f"[{i}] Source: {it.source}\nTitle: {it.title}\nDetails: {_item_detail_text(it)}"
         for i, it in enumerate(batch)
     )
     message = client.messages.create(
