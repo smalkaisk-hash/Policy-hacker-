@@ -17,9 +17,9 @@ LOGO_MARKDOWN_PATH = "../assets/logobig.png"
 TITLE = "Politikas monitorings"  # "Policy monitoring" — matches the task's own naming
 
 DEFINITION = (
-    '"Startapiem atbilstošs" = finansējuma un atbalsta programmas (granti, ES fondi, '
+    '"Jaunuzņēmumiem atbilstošs" = finansējuma un atbalsta programmas (granti, ES fondi, '
     "akseleratoru/inkubatoru programmas, LIAA/Altum iniciatīvas), tiesiskas vai regulatīvas "
-    "izmaiņas, kas skar startapus, MVU vai tehnoloģiju uzņēmumus (komerctiesības, nodokļu "
+    "izmaiņas, kas skar jaunuzņēmumus, MVU vai tehnoloģiju uzņēmumus (komerctiesības, nodokļu "
     "režīms, darba tiesības, digitālo pakalpojumu/MI regulējums, publiskie iepirkumi), vai "
     "likumprojekti/iniciatīvas par inovācijām, digitalizāciju un uzņēmējdarbību."
 )
@@ -60,7 +60,7 @@ def render_markdown(classifications: list[Classification], since: date, run_date
     ]
 
     if not classifications:
-        lines.append("Šajā periodā nav atrasts neviens startapiem atbilstošs ieraksts.")
+        lines.append("Šajā periodā nav atrasts neviens jaunuzņēmumiem atbilstošs ieraksts.")
         return "\n".join(lines)
 
     grouped = _group_by_source(classifications)
@@ -105,7 +105,7 @@ def render_html(classifications: list[Classification], since: date, run_date: da
     ]
 
     if not classifications:
-        body_parts.append("<p class='empty'>Šajā periodā nav atrasts neviens startapiem atbilstošs ieraksts.</p>")
+        body_parts.append("<p class='empty'>Šajā periodā nav atrasts neviens jaunuzņēmumiem atbilstošs ieraksts.</p>")
     else:
         grouped = _group_by_source(classifications)
         n_items, n_sources = len(classifications), len(grouped)

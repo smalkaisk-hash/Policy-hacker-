@@ -87,7 +87,9 @@ sector with no plausible startup angle (e.g. agricultural subsidies unrelated to
 healthcare staffing, road maintenance).
 
 Be decisive. Always write the one-line reason in Latvian, regardless of what language the
-source item is in — the digest this feeds is Latvian-only."""
+source item is in — the digest this feeds is Latvian-only. Use the proper Latvian term
+"jaunuzņēmums/jaunuzņēmumi" (in whatever case the sentence needs) for "startup" — never the
+English loanword "startaps/startups"."""
 
 
 @dataclass
