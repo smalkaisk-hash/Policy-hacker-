@@ -72,7 +72,10 @@ fetch (7 sources, full text) → dedupe against local state → classify for rel
      startups" summary needs actual reading comprehension, which is exactly what the Claude
      Haiku stage below does once a key is supplied.
 4. **Render** — `policy_digest/digest.py` writes a digest grouped by source, both as
-   `output/digest_<date>.md` and a standalone `output/digest_<date>.html`.
+   `output/digest_<date>.md` and a standalone `output/digest_<date>.html`. The HTML version is
+   startin.lv-branded (logo from `assets/logobig.png`, embedded inline as base64 so the file
+   stays self-contained/emailable) with color-coded category badges (funding, regulation,
+   tax & labor, digital & innovation) for quick scanning.
 
 ## Setup
 

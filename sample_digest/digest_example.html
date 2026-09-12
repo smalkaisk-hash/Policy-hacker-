@@ -2,51 +2,138 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Policy Digest — 2026-09-12</title>
 <style>
-  body { font-family: system-ui, sans-serif; max-width: 780px; margin: 2rem auto; padding: 0 1rem; color: #1a1a1a; }
-  h1 { margin-bottom: 0.25rem; }
-  .meta { color: #555; font-size: 0.9rem; }
-  .summary { margin-top: 1rem; }
-  h2 { border-bottom: 2px solid #eee; padding-bottom: 0.25rem; margin-top: 2rem; }
-  ul { list-style: none; padding: 0; }
-  li { padding: 0.75rem 0; border-bottom: 1px solid #eee; }
-  a { font-weight: 600; color: #0b5fff; text-decoration: none; }
-  a:hover { text-decoration: underline; }
-  .date { color: #888; font-size: 0.85rem; margin-left: 0.5rem; }
-  .category { display: inline-block; background: #eef2ff; color: #3346a6; border-radius: 999px;
-               padding: 0.1rem 0.6rem; font-size: 0.75rem; margin-left: 0.5rem; }
-  .reason { color: #444; margin-top: 0.25rem; font-size: 0.9rem; }
+  * { box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+    background: #f4f4f6;
+    color: #17181c;
+    margin: 0;
+    padding: 2.5rem 1rem;
+  }
+  .page {
+    max-width: 840px;
+    margin: 0 auto;
+    background: #ffffff;
+    border-radius: 16px;
+    box-shadow: 0 1px 3px rgba(15, 15, 20, 0.06), 0 8px 24px rgba(15, 15, 20, 0.06);
+    padding: 2.75rem 3rem 3rem;
+  }
+  .masthead {
+    display: flex;
+    align-items: center;
+    gap: 1.25rem;
+    padding-bottom: 1.5rem;
+    margin-bottom: 1.5rem;
+    border-bottom: 1px solid #ececef;
+  }
+  .logo { height: 40px; width: auto; flex-shrink: 0; }
+  .masthead-text { display: flex; flex-direction: column; }
+  .eyebrow {
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: #c2255c;
+  }
+  h1 { margin: 0.1rem 0 0; font-size: 1.8rem; font-weight: 800; letter-spacing: -0.01em; }
+  .meta-box {
+    background: #faf7f8;
+    border: 1px solid #f0e4e8;
+    border-radius: 10px;
+    padding: 0.9rem 1.1rem;
+    font-size: 0.88rem;
+    color: #55565c;
+    line-height: 1.5;
+  }
+  .meta-box p { margin: 0.25rem 0; }
+  .meta-box strong { color: #17181c; }
+  .stats { display: flex; gap: 2rem; margin: 1.75rem 0 0.5rem; }
+  .stat { display: flex; flex-direction: column; }
+  .stat-num { font-size: 2rem; font-weight: 800; color: #c2255c; line-height: 1; }
+  .stat-label { font-size: 0.8rem; color: #77787f; margin-top: 0.15rem; }
+  .empty { color: #55565c; margin-top: 1.5rem; }
+  h2 {
+    font-size: 1.05rem;
+    font-weight: 700;
+    margin: 2.5rem 0 0.9rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .count {
+    background: #17181c;
+    color: #fff;
+    border-radius: 999px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    padding: 0.1rem 0.55rem;
+  }
+  ul { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 0.7rem; }
+  .item {
+    background: #fbfbfc;
+    border: 1px solid #ececef;
+    border-left: 4px solid #ccc;
+    border-radius: 10px;
+    padding: 0.9rem 1.1rem;
+    transition: box-shadow 0.15s ease, transform 0.15s ease;
+  }
+  .item:hover { box-shadow: 0 4px 14px rgba(15, 15, 20, 0.08); transform: translateY(-1px); }
+  .item-head { display: flex; align-items: baseline; justify-content: space-between; gap: 0.75rem; flex-wrap: wrap; }
+  .item a { font-weight: 650; color: #17181c; text-decoration: none; font-size: 0.98rem; }
+  .item a:hover { color: #c2255c; text-decoration: underline; }
+  .badge {
+    display: inline-block;
+    border-radius: 999px;
+    padding: 0.12rem 0.65rem;
+    font-size: 0.7rem;
+    font-weight: 700;
+    white-space: nowrap;
+  }
+  .date { color: #9a9ba1; font-size: 0.78rem; margin-top: 0.15rem; }
+  .reason { color: #45464c; margin: 0.45rem 0 0; font-size: 0.9rem; line-height: 1.5; }
 </style>
 </head>
 <body>
-<h1>Policy Digest — 2026-09-12</h1>
-<p class='meta'>Window: 2026-09-05 to 2026-09-12.<br>&quot;Startup-relevant&quot; = funding/support programs (grants, EU funds, accelerator/incubator programs, LIAA/Altum initiatives), legal or regulatory changes affecting startups/SMEs/tech companies (company law, tax treatment, employee stock options, labor law, digital/AI regulation, public procurement), or draft legislation/initiatives on innovation, digitalization, and entrepreneurship.</p>
-<p class='summary'><strong>17 relevant item(s) across 4 source(s).</strong></p>
-<h2>Ekonomikas ministrija (3)</h2><ul>
-<li><a href='https://www.em.gov.lv/lv/jaunums/nestai-latvija-investes-10-miljonus-eiro-aizsardzibas-maksliga-intelekta-attistiba' target='_blank' rel='noopener'>“NestAI” Latvijā investēs 10 miljonus eiro aizsardzības mākslīgā intelekta attīstībā</a> <span class='date'>2026-09-11</span> <span class='category'>funding</span><div class='reason'>NestAI 10 miljonu eiro investīcija R&amp;D centrā ar 30 jaunām darbavietas ir tieša atbalsta programma tehnoloģiju startupiem.</div></li>
-<li><a href='https://www.em.gov.lv/lv/jaunums/latvijas-uznemeji-valsts-prezidenta-vizites-laika-dosies-tirdzniecibas-misija-uz-asv' target='_blank' rel='noopener'>Latvijas uzņēmēji Valsts prezidenta vizītes laikā dosies tirdzniecības misijā uz ASV</a> <span class='date'>2026-09-10</span> <span class='category'>funding</span><div class='reason'>LIAA organizēta tirdzniecības misija uz ASV palīdz jaunuzņēmumiem un tehnoloģijas uzņēmumiem veidot kontaktus un piesaistīt investīcijas.</div></li>
-<li><a href='https://www.em.gov.lv/lv/jaunums/latvijas-uznemeji-berline-stiprinas-sadarbibu-ar-vacijas-tehnologiju-un-rupniecibas-lideriem' target='_blank' rel='noopener'>Latvijas uzņēmēji Berlīnē stiprinās sadarbību ar Vācijas tehnoloģiju un rūpniecības līderiem</a> <span class='date'>2026-09-07</span> <span class='category'>funding</span><div class='reason'>LIAA organizēta tirdzniecības misija Berlīnē ar tehnoloģiju fokusa nozarēm veicina startupiem iespējas veidot partnerības un piesaistīt investīcijas.</div></li>
-</ul>
-<h2>LIAA (7)</h2><ul>
-<li><a href='https://www.liaa.gov.lv/lv/jaunums/nestai-paplasina-darbibu-latvija-lai-attistitu-aizsardzibas-maksligo-intelektu-nato-austrumu-flanga' target='_blank' rel='noopener'>“NestAI” paplašina darbību Latvijā, lai attīstītu aizsardzības mākslīgo intelektu NATO austrumu flangā</a> <span class='date'>2026-09-11</span> <span class='category'>funding</span><div class='reason'>NestAI 10 miljonu eiro investīcija R&amp;D centrā ar 30 darbvietām un inovāciju atbalsts mākslīgā intelekta startupiem.</div></li>
-<li><a href='https://www.liaa.gov.lv/lv/jaunums/norvegijas-finansu-instrumenta-2021-2028-gada-planosanas-periods' target='_blank' rel='noopener'>Norvēģijas finanšu instrumenta 2021.-2028. gada plānošanas periods</a> <span class='date'>2026-09-11</span> <span class='category'>funding</span><div class='reason'>Norvēģijas finanšu instruments ar 27,5 miljonu eiro finansējumu zaļiem jaunuzņēmumiem un inovācijām, ko administrē LIAA.</div></li>
-<li><a href='https://www.liaa.gov.lv/lv/jaunums/latvijas-uznemeji-valsts-prezidenta-vizites-laika-dosies-tirdzniecibas-misija-uz-asv' target='_blank' rel='noopener'>Latvijas uzņēmēji Valsts prezidenta vizītes laikā dosies tirdzniecības misijā uz ASV</a> <span class='date'>2026-09-10</span> <span class='category'>funding</span><div class='reason'>LIAA tirdzniecības misija uz ASV palīdz jaunuzņēmumiem un startupiem piesaistīt investīcijas un veidot biznesa kontaktus.</div></li>
-<li><a href='https://www.liaa.gov.lv/lv/jaunums/liaa-piedava-riku-kas-palidz-uznemejiem-atrast-piemerotako-atbalstu' target='_blank' rel='noopener'>LIAA piedāvā rīku, kas palīdz uzņēmējiem atrast piemērotāko atbalstu</a> <span class='date'>2026-09-10</span> <span class='category'>funding</span><div class='reason'>LIAA piedāvā digitālu atbalsta vedni, kas palīdz uzņēmējiem atrast pieejamos finanšu atbalsta instrumentus un programmas.</div></li>
-<li><a href='https://www.liaa.gov.lv/lv/jaunums/no-prototipa-lidz-eksporta-tirgum-liaa-atver-rudens-uznemsanu-biznesa-inkubacijas-programma' target='_blank' rel='noopener'>No prototipa līdz eksporta tirgum: LIAA atver rudens uzņemšanu Biznesa inkubācijas programmā</a> <span class='date'>2026-09-09</span> <span class='category'>funding</span><div class='reason'>LIAA Biznesa inkubācijas programma piedāvā līdz 70% finansējumu jauniem inovatīviem un eksportspējīgiem uzņēmumiem, kā arī mentoru atbalstu.</div></li>
-<li><a href='https://www.liaa.gov.lv/lv/jaunums/latvijas-uznemeji-berline-stiprinas-sadarbibu-ar-vacijas-tehnologiju-un-rupniecibas-lideriem' target='_blank' rel='noopener'>Latvijas uzņēmēji Berlīnē stiprinās sadarbību ar Vācijas tehnoloģiju un rūpniecības līderiem</a> <span class='date'>2026-09-07</span> <span class='category'>funding</span><div class='reason'>LIAA organizēta tirdzniecības misija Berlīnē Latvijas tech un rūpniecības uzņēmumiem, veicina eksportu un starptautiskās sadarbības iespējas.</div></li>
-<li><a href='https://www.liaa.gov.lv/lv/jaunums/sakusies-pieteiksanas-jauno-uznemeju-skola-2026-piecas-latvijas-pilsetas' target='_blank' rel='noopener'>Sākusies pieteikšanās “Jauno uzņēmēju skolā 2026” piecās Latvijas pilsētās</a> <span class='date'>2026-09-07</span> <span class='category'>digitalization_innovation</span><div class='reason'>Programma veicina jauniešu uzņēmējdarbības izglītību un skolēnu mācību uzņēmumu attīstību ar inovācijas un ideju ģenerēšanas fokuss.</div></li>
-</ul>
-<h2>Ministru kabineta protokoli (3)</h2><ul>
-<li><a href='https://tapportals.mk.gov.lv/meetings/protocols/c4f5b0fb-b24b-42bc-a36b-701cef63e393#meeting-protocol-preview-15' target='_blank' rel='noopener'>Noteikumu projekts &quot;Noteikumi par uzņēmējdarbības riska valsts nodevu 2027. gadā&quot;</a> <span class='date'>2026-09-08</span> <span class='category'>tax_labor</span><div class='reason'>Uzņēmējdarbības riska nodevu noteikumi tieši ietekmē uzņēmējus un startup nodokļu režīmus.</div></li>
-<li><a href='https://tapportals.mk.gov.lv/meetings/protocols/c4f5b0fb-b24b-42bc-a36b-701cef63e393#meeting-protocol-preview-25' target='_blank' rel='noopener'>Noteikumu projekts &quot;Grozījumi Ministru kabineta 2025. gada 22. decembra noteikumos Nr. 846 &quot;Eiropas Savienības kohēzijas politikas programmas 2021.–2027. gadam 4.3.3. specifiskā atbalsta mērķa &quot;Uzlabot visu darba meklētāju, jo īpaši jauniešu – it sevišķi, īstenojot Garantiju jauniešiem –, ilgstošo bezdarbnieku un darba tirgū nelabvēlīgā situācijā esošo grupu, un ekonomiski neaktīvo personu piekļuvi nodarbinātībai un aktivizācijas pasākumiem, kā arī veicinot pašnodarbinātību un sociālo ekonomiku&quot; 4.3.3.1. pasākuma &quot;Bezdarbnieku, darba meklētāju un bezdarba riskam pakļauto personu kvalifikācijas un prasmju paaugstināšana&quot; īstenošanas noteikumi&quot;&quot;</a> <span class='date'>2026-09-08</span> <span class='category'>tax_labor</span><div class='reason'>ES kohēzijas politikas programmas noteikumi bezdarbnieku un jauniešu prasmju pilnveidei var sekmēt startup talanta pieejamību.</div></li>
-<li><a href='https://tapportals.mk.gov.lv/meetings/protocols/c4f5b0fb-b24b-42bc-a36b-701cef63e393#meeting-protocol-preview-40' target='_blank' rel='noopener'>Informatīvais ziņojums &quot;Par vienotu pārvaldību, nodrošinot pieaugušo izglītības atbalsta pasākumus cilvēkkapitāla attīstībai&quot;</a> <span class='date'>2026-09-08</span> <span class='category'>tax_labor</span><div class='reason'>Vienota nodarbinātības atbalsta sistēma ar fokuss uz darbaspēka pieejamību un prasmēm var ietekmēt startup personāla piesaisti.</div></li>
-</ul>
-<h2>Saeimas komisiju darba kārtības (4)</h2><ul>
-<li><a href='https://titania.saeima.lv/livs/saeimasnotikumi.nsf/0/99A0B29BD25203F6C2258E60002059D1?OpenDocument' target='_blank' rel='noopener'>Cilvēktiesību un sabiedrisko lietu komisijas Latgales apakškomisijas sēde</a> <span class='date'>2026-09-11</span> <span class='category'>digitalization_innovation</span><div class='reason'>Diskusija par augstāko izglītību, pētniecību, inovāciju un profesionālo izglītību Latgalē ir svarīga startupiem un inovāciju ekosistēmai reģionā.</div></li>
-<li><a href='https://titania.saeima.lv/livs/saeimasnotikumi.nsf/0/6F7C1AA20FEA7CBCC2258E6600492A62?OpenDocument' target='_blank' rel='noopener'>Budžeta un finanšu (nodokļu) komisijas sēde</a> <span class='date'>2026-09-09</span> <span class='category'>regulation</span><div class='reason'>Likumprojekti par reklāmu, sankcijām, pensiju fondiem, civilo procesa jautājumiem un kolektīvās finansēšanas pakalpojumiem var ietekmēt startup darbību.</div></li>
-<li><a href='https://titania.saeima.lv/livs/saeimasnotikumi.nsf/0/ECC79249FC0FABA7C2258E66004945CA?OpenDocument' target='_blank' rel='noopener'>Budžeta un finanšu (nodokļu) komisijas sēde</a> <span class='date'>2026-09-08</span> <span class='category'>tax_labor</span><div class='reason'>Saeimas komisijai izskatīšanai grozījumi mikrouzņēmumu nodokļa likumā un ienākuma nodokļa likumā, kas skar mazos uzņēmumus.</div></li>
-<li><a href='https://titania.saeima.lv/livs/saeimasnotikumi.nsf/0/D4797C3D060E3035C2258E5E00302462?OpenDocument' target='_blank' rel='noopener'>Cilvēktiesību un sabiedrisko lietu komisijas Latgales apakškomisijas sēde</a> <span class='date'>2026-09-08</span> <span class='category'>funding</span><div class='reason'>Uzņēmējdarbības atbalsta pasākumi pašvaldībām ar fokuss uz sasniedzamajiem rādītājiem un efektivitāti reģionālā līmenī.</div></li>
-</ul>
+<div class="page">
+<header class='masthead'>
+<img src='data:image/png;base64,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' alt='startin.lv' class='logo'>
+<div class='masthead-text'>
+<span class='eyebrow'>Policy Monitoring Digest</span>
+<h1>2026-09-12</h1>
+</div>
+</header>
+<div class='meta-box'>
+<p><strong>Window</strong> 2026-09-05 &rarr; 2026-09-12</p>
+<p>&quot;Startup-relevant&quot; = funding/support programs (grants, EU funds, accelerator/incubator programs, LIAA/Altum initiatives), legal or regulatory changes affecting startups/SMEs/tech companies (company law, tax treatment, employee stock options, labor law, digital/AI regulation, public procurement), or draft legislation/initiatives on innovation, digitalization, and entrepreneurship.</p>
+</div>
+<div class='stats'><div class='stat'><span class='stat-num'>16</span><span class='stat-label'>relevant items</span></div><div class='stat'><span class='stat-num'>4</span><span class='stat-label'>sources</span></div></div>
+<section class='source'><h2>Ekonomikas ministrija <span class='count'>4</span></h2><ul>
+<li class='item' style='border-left-color:#1d4ed8'><div class='item-head'><a href='https://www.em.gov.lv/lv/jaunums/valainis-ar-asv-vestnieku-es-parruna-abu-valstu-ekonomiskas-sadarbibas-stiprinasanu-mi-un-energetikas-jautajumos' target='_blank' rel='noopener'>Valainis ar ASV vēstnieku ES pārrunā abu valstu ekonomiskās sadarbības stiprināšanu MI un enerģētikas jautājumos</a><span class='badge' style='color:#1d4ed8;background:#dbeafe'>Regulation</span></div><div class='date'>2026-09-11</div><p class='reason'>Diskusija par transatlantiskās pārniecības šķēršļiem un inovatīvu regulējumu pievilcīgumu investīcijām ir nozīmīga mazajam biznesam.</p></li>
+<li class='item' style='border-left-color:#047857'><div class='item-head'><a href='https://www.em.gov.lv/lv/jaunums/nestai-latvija-investes-10-miljonus-eiro-aizsardzibas-maksliga-intelekta-attistiba' target='_blank' rel='noopener'>“NestAI” Latvijā investēs 10 miljonus eiro aizsardzības mākslīgā intelekta attīstībā</a><span class='badge' style='color:#047857;background:#d1fae5'>Funding</span></div><div class='date'>2026-09-11</div><p class='reason'>NestAI 10 miljonu eiro investīcija R&amp;D centrā un 30 darbavietas zinātniekiem un inženieriem ir tieša investīciju piesaiste un startup ekosistēmas attīstības signāls.</p></li>
+<li class='item' style='border-left-color:#047857'><div class='item-head'><a href='https://www.em.gov.lv/lv/jaunums/latvijas-uznemeji-valsts-prezidenta-vizites-laika-dosies-tirdzniecibas-misija-uz-asv' target='_blank' rel='noopener'>Latvijas uzņēmēji Valsts prezidenta vizītes laikā dosies tirdzniecības misijā uz ASV</a><span class='badge' style='color:#047857;background:#d1fae5'>Funding</span></div><div class='date'>2026-09-10</div><p class='reason'>LIAA organizēta tirdzniecības misija uz ASV palīdz Latvijas startupiem un jaunuzņēmumiem veidot kontaktus, piesaistīt investorus un atvērt jaunus tirgus.</p></li>
+<li class='item' style='border-left-color:#047857'><div class='item-head'><a href='https://www.em.gov.lv/lv/jaunums/latvijas-uznemeji-berline-stiprinas-sadarbibu-ar-vacijas-tehnologiju-un-rupniecibas-lideriem' target='_blank' rel='noopener'>Latvijas uzņēmēji Berlīnē stiprinās sadarbību ar Vācijas tehnoloģiju un rūpniecības līderiem</a><span class='badge' style='color:#047857;background:#d1fae5'>Funding</span></div><div class='date'>2026-09-07</div><p class='reason'>LIAA tirdzniecības misija Berlīnē uzņēmumiem piesaistīt investīcijas un veidot biznesa kontaktus ar inovāciju centriem ir startup attīstības veicināšana.</p></li>
+</ul></section>
+<section class='source'><h2>LIAA <span class='count'>7</span></h2><ul>
+<li class='item' style='border-left-color:#047857'><div class='item-head'><a href='https://www.liaa.gov.lv/lv/jaunums/nestai-paplasina-darbibu-latvija-lai-attistitu-aizsardzibas-maksligo-intelektu-nato-austrumu-flanga' target='_blank' rel='noopener'>“NestAI” paplašina darbību Latvijā, lai attīstītu aizsardzības mākslīgo intelektu NATO austrumu flangā</a><span class='badge' style='color:#047857;background:#d1fae5'>Funding</span></div><div class='date'>2026-09-11</div><p class='reason'>NestAI pētniecības un attīstības centra atvēršana ar 10 miljonu eiro investīciju un 30 darbavietām ir stratēģiska investīcija augsti inovatīvā nozarē.</p></li>
+<li class='item' style='border-left-color:#047857'><div class='item-head'><a href='https://www.liaa.gov.lv/lv/jaunums/norvegijas-finansu-instrumenta-2021-2028-gada-planosanas-periods' target='_blank' rel='noopener'>Norvēģijas finanšu instrumenta 2021.-2028. gada plānošanas periods</a><span class='badge' style='color:#047857;background:#d1fae5'>Funding</span></div><div class='date'>2026-09-11</div><p class='reason'>Norvēģijas finanšu instrumenta programma 27,5 miljonu eiro apmērā atbalsta zaļus jaunuzņēmumus, inovācijas un SME – tiešs finansējums startupiem.</p></li>
+<li class='item' style='border-left-color:#047857'><div class='item-head'><a href='https://www.liaa.gov.lv/lv/jaunums/latvijas-uznemeji-valsts-prezidenta-vizites-laika-dosies-tirdzniecibas-misija-uz-asv' target='_blank' rel='noopener'>Latvijas uzņēmēji Valsts prezidenta vizītes laikā dosies tirdzniecības misijā uz ASV</a><span class='badge' style='color:#047857;background:#d1fae5'>Funding</span></div><div class='date'>2026-09-10</div><p class='reason'>LIAA tirdzniecības misija uz ASV visos sektoros palīdz jaunuzņēmumiem piesaistīt investorus, veidot globālus kontaktus un atvērt tirgus.</p></li>
+<li class='item' style='border-left-color:#047857'><div class='item-head'><a href='https://www.liaa.gov.lv/lv/jaunums/liaa-piedava-riku-kas-palidz-uznemejiem-atrast-piemerotako-atbalstu' target='_blank' rel='noopener'>LIAA piedāvā rīku, kas palīdz uzņēmējiem atrast piemērotāko atbalstu</a><span class='badge' style='color:#047857;background:#d1fae5'>Funding</span></div><div class='date'>2026-09-10</div><p class='reason'>LIAA piedāvā tīmekļa rīku, kas palīdz uzņēmējiem navigēt starp pieejamajiem atbalsta programmiem, tostarp LIAA, Altum, CFLA un Patentu valdes iniciatīvām.</p></li>
+<li class='item' style='border-left-color:#047857'><div class='item-head'><a href='https://www.liaa.gov.lv/lv/jaunums/no-prototipa-lidz-eksporta-tirgum-liaa-atver-rudens-uznemsanu-biznesa-inkubacijas-programma' target='_blank' rel='noopener'>No prototipa līdz eksporta tirgum: LIAA atver rudens uzņemšanu Biznesa inkubācijas programmā</a><span class='badge' style='color:#047857;background:#d1fae5'>Funding</span></div><div class='date'>2026-09-09</div><p class='reason'>LIAA Biznesa inkubācijas programma piedāvā līdz 70% granta finansējumu startup un SME uzņēmumiem ar inovatīviem produktiem un eksporta potenciālu.</p></li>
+<li class='item' style='border-left-color:#047857'><div class='item-head'><a href='https://www.liaa.gov.lv/lv/jaunums/latvijas-uznemeji-berline-stiprinas-sadarbibu-ar-vacijas-tehnologiju-un-rupniecibas-lideriem' target='_blank' rel='noopener'>Latvijas uzņēmēji Berlīnē stiprinās sadarbību ar Vācijas tehnoloģiju un rūpniecības līderiem</a><span class='badge' style='color:#047857;background:#d1fae5'>Funding</span></div><div class='date'>2026-09-07</div><p class='reason'>LIAA organizēta tirdzniecības misija Berlīnē palīdz Latvijas uzņēmumiem veidot kontaktus ar investoriem un inovāciju centriem, stiprinot iespējas pieejam starptautiskajiem tirgiem.</p></li>
+<li class='item' style='border-left-color:#7e22ce'><div class='item-head'><a href='https://www.liaa.gov.lv/lv/jaunums/sakusies-pieteiksanas-jauno-uznemeju-skola-2026-piecas-latvijas-pilsetas' target='_blank' rel='noopener'>Sākusies pieteikšanās “Jauno uzņēmēju skolā 2026” piecās Latvijas pilsētās</a><span class='badge' style='color:#7e22ce;background:#f3e8ff'>Digital &amp; Innovation</span></div><div class='date'>2026-09-07</div><p class='reason'>LIAA un Junior Achievement Latvia organizē Jauno uzņēmēju skolu, kas veicina skolēnu uzņēmējdarbības spēju un inovācijas kultūras attīstību.</p></li>
+</ul></section>
+<section class='source'><h2>Ministru kabineta protokoli <span class='count'>1</span></h2><ul>
+<li class='item' style='border-left-color:#b45309'><div class='item-head'><a href='https://tapportals.mk.gov.lv/meetings/protocols/c4f5b0fb-b24b-42bc-a36b-701cef63e393#meeting-protocol-preview-15' target='_blank' rel='noopener'>Noteikumu projekts &quot;Noteikumi par uzņēmējdarbības riska valsts nodevu 2027. gadā&quot;</a><span class='badge' style='color:#b45309;background:#fef3c7'>Tax &amp; Labor</span></div><div class='date'>2026-09-08</div><p class='reason'>Noteikumi par uzņēmējdarbības riska valsts nodevu var ietekmēt uzņēmumu (tostarp startupu) nodokļu statusu.</p></li>
+</ul></section>
+<section class='source'><h2>Saeimas komisiju darba kārtības <span class='count'>4</span></h2><ul>
+<li class='item' style='border-left-color:#7e22ce'><div class='item-head'><a href='https://titania.saeima.lv/livs/saeimasnotikumi.nsf/0/99A0B29BD25203F6C2258E60002059D1?OpenDocument' target='_blank' rel='noopener'>Cilvēktiesību un sabiedrisko lietu komisijas Latgales apakškomisijas sēde</a><span class='badge' style='color:#7e22ce;background:#f3e8ff'>Digital &amp; Innovation</span></div><div class='date'>2026-09-11</div><p class='reason'>Sēde aplūko augstākās izglītības, pētniecības, inovācijas un profesionālās izglītības attīstību Latgalē, kas ir svarīga startupiem nepieciešamā talenta un infrastruktūras bāzes veidošanā.</p></li>
+<li class='item' style='border-left-color:#b45309'><div class='item-head'><a href='https://titania.saeima.lv/livs/saeimasnotikumi.nsf/0/6F7C1AA20FEA7CBCC2258E6600492A62?OpenDocument' target='_blank' rel='noopener'>Budžeta un finanšu (nodokļu) komisijas sēde</a><span class='badge' style='color:#b45309;background:#fef3c7'>Tax &amp; Labor</span></div><div class='date'>2026-09-09</div><p class='reason'>Likumprojekts par kolektīvās finansēšanas pakalpojumiem ir svarīgs startupiem, kuri vēlas piesaistīt kapitālu alternatīvos veidos.</p></li>
+<li class='item' style='border-left-color:#b45309'><div class='item-head'><a href='https://titania.saeima.lv/livs/saeimasnotikumi.nsf/0/ECC79249FC0FABA7C2258E66004945CA?OpenDocument' target='_blank' rel='noopener'>Budžeta un finanšu (nodokļu) komisijas sēde</a><span class='badge' style='color:#b45309;background:#fef3c7'>Tax &amp; Labor</span></div><div class='date'>2026-09-08</div><p class='reason'>Likumprojekti par grozījumiem mikrouzņēmumu nodokļa likumā, iedzīvotāju ienākuma nodokļa likumā un kolektīvās finansēšanas pakalpojumu likumā var būtiski ietekmēt startupus un SME nodokļu un finansēšanas jautājumos.</p></li>
+<li class='item' style='border-left-color:#047857'><div class='item-head'><a href='https://titania.saeima.lv/livs/saeimasnotikumi.nsf/0/D4797C3D060E3035C2258E5E00302462?OpenDocument' target='_blank' rel='noopener'>Cilvēktiesību un sabiedrisko lietu komisijas Latgales apakškomisijas sēde</a><span class='badge' style='color:#047857;background:#d1fae5'>Funding</span></div><div class='date'>2026-09-08</div><p class='reason'>Diskusija par uzņēmējdarbības atbalsta pasākumiem pašvaldībām var ietekmēt regionālo startup ekosistēmu un CFLA atbalstu SME.</p></li>
+</ul></section>
+</div>
 </body>
 </html>
