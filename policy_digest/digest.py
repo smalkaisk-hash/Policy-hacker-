@@ -14,6 +14,8 @@ LOGO_PATH = Path(__file__).resolve().parent.parent / "assets" / "logobig.png"
 # Markdown files live one level down (output/, sample_digest/), both siblings of assets/.
 LOGO_MARKDOWN_PATH = "../assets/logobig.png"
 
+TITLE = "Politikas monitorings"  # "Policy monitoring" — matches the task's own naming
+
 DEFINITION = (
     '"Startapiem atbilstošs" = finansējuma un atbalsta programmas (granti, ES fondi, '
     "akseleratoru/inkubatoru programmas, LIAA/Altum iniciatīvas), tiesiskas vai regulatīvas "
@@ -25,11 +27,11 @@ DEFINITION = (
 # (Latvian label, accent hex) — one accent color used consistently, not a rainbow per
 # category; categories are told apart by label text, not by hue.
 CATEGORY_META = {
-    "funding": ("Finansējums", "#a3123c"),
-    "regulation": ("Regulējums", "#a3123c"),
-    "tax_labor": ("Nodokļi un darbs", "#a3123c"),
-    "digitalization_innovation": ("Digitalizācija un inovācijas", "#a3123c"),
-    "other": ("Cits", "#6b6b70"),
+    "funding": ("Finansējums", "#c0173f"),
+    "regulation": ("Regulējums", "#c0173f"),
+    "tax_labor": ("Nodokļi un darbs", "#c0173f"),
+    "digitalization_innovation": ("Digitalizācija un inovācijas", "#c0173f"),
+    "other": ("Cits", "#71717a"),
 }
 
 
@@ -50,9 +52,9 @@ def render_markdown(classifications: list[Classification], since: date, run_date
     lines = [
         f"![startin.lv]({LOGO_MARKDOWN_PATH})",
         "",
-        f"# Politikas apkopojums — {run_date.isoformat()}",
+        f"# {TITLE}",
+        f"#### {since.isoformat()} – {run_date.isoformat()}",
         "",
-        f"> Periods: {since.isoformat()} — {run_date.isoformat()}.",
         f"> {DEFINITION}",
         "",
     ]
@@ -94,11 +96,12 @@ def render_html(classifications: list[Classification], since: date, run_date: da
     body_parts = [
         "<header class='masthead'>",
         logo_html,
-        "<div class='rule'></div>",
-        f"<time>{run_date.isoformat()}</time>",
+        "<div>",
+        f"<h1>{TITLE}</h1>",
+        f"<p class='date-range'>{since.isoformat()} – {run_date.isoformat()}</p>",
+        "</div>",
         "</header>",
-        f"<h1>Politikas apkopojums</h1>",
-        f"<p class='dek'>Periods: {since.isoformat()} — {run_date.isoformat()}. {esc(DEFINITION)}</p>",
+        f"<div class='scope'><p>{esc(DEFINITION)}</p></div>",
     ]
 
     if not classifications:
@@ -110,7 +113,7 @@ def render_html(classifications: list[Classification], since: date, run_date: da
         source_word = "avota" if n_sources == 1 else "avotiem"
         body_parts.append(
             f"<p class='lede'><strong>{n_items}</strong> atbilstoši {item_word} "
-            f"no <strong>{n_sources}</strong> {source_word}.</p>"
+            f"no <strong>{n_sources}</strong> {source_word}</p>"
         )
         for source, items in sorted(grouped.items()):
             body_parts.append(f"<h2>{esc(source)} <span class='count'>{len(items)}</span></h2><ul>")
@@ -120,9 +123,9 @@ def render_html(classifications: list[Classification], since: date, run_date: da
                     "<li>"
                     "<div class='item-head'>"
                     f"<a href='{esc(c.item.url)}' target='_blank' rel='noopener'>{esc(c.item.title)}</a>"
+                    f"<span class='tag'>{esc(label)}</span>"
                     "</div>"
-                    f"<div class='item-meta'>{c.item.date} &nbsp;&middot;&nbsp; "
-                    f"<span class='tag'>{esc(label)}</span></div>"
+                    f"<div class='item-meta'>{c.item.date}</div>"
                     f"<p class='reason'>{esc(c.reason)}</p>"
                     "</li>"
                 )
@@ -134,104 +137,128 @@ def render_html(classifications: list[Classification], since: date, run_date: da
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Politikas apkopojums — {run_date.isoformat()}</title>
+<title>{TITLE} — {run_date.isoformat()}</title>
 <style>
   * {{ box-sizing: border-box; }}
+  html {{ background: #eef0f3; }}
   body {{
-    font-family: Georgia, "Iowan Old Style", "Palatino Linotype", serif;
-    background: #f2f1ee;
-    color: #201f1d;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background: #eef0f3;
+    color: #1c1d21;
     margin: 0;
-    padding: 3rem 1.25rem 5rem;
+    padding: clamp(1.5rem, 5vw, 4rem) 0;
+    -webkit-font-smoothing: antialiased;
   }}
   .page {{
     max-width: 700px;
     margin: 0 auto;
-    background: #fffdfb;
-    padding: 0 0 1rem;
+    background: #ffffff;
+    border-radius: 20px;
+    box-shadow: 0 1px 2px rgba(20, 20, 30, 0.04), 0 12px 32px rgba(20, 20, 30, 0.07);
+    padding: clamp(1.75rem, 6vw, 3.25rem);
   }}
   .masthead {{
     display: flex;
     align-items: center;
-    gap: 1rem;
-    margin-bottom: 0.6rem;
+    gap: 1.1rem;
+    padding-bottom: 1.5rem;
+    margin-bottom: 1.5rem;
+    border-bottom: 1px solid #edeef1;
   }}
-  .logo {{ height: 30px; width: auto; filter: grayscale(1); opacity: 0.85; }}
-  .rule {{ flex: 1; height: 1px; background: #201f1d; }}
-  time {{
-    font-family: "Helvetica Neue", Arial, sans-serif;
-    font-size: 0.72rem;
-    letter-spacing: 0.06em;
-    color: #6b6b70;
-    text-transform: uppercase;
-  }}
+  .logo {{ height: 34px; width: auto; flex-shrink: 0; }}
   h1 {{
-    font-size: 2.3rem;
-    font-weight: 400;
-    margin: 0 0 0.6rem;
-    letter-spacing: -0.01em;
+    font-size: 1.55rem;
+    font-weight: 800;
+    letter-spacing: -0.015em;
+    margin: 0;
+    line-height: 1.2;
   }}
-  .dek {{
-    font-family: "Helvetica Neue", Arial, sans-serif;
-    font-size: 0.92rem;
-    color: #4a4a4d;
-    line-height: 1.6;
-    border-top: 1px solid #ddd9d2;
-    border-bottom: 1px solid #ddd9d2;
-    padding: 0.9rem 0;
-    margin: 0 0 1.6rem;
+  .date-range {{
+    font-size: 0.85rem;
+    color: #8b8d97;
+    margin: 0.2rem 0 0;
+    font-weight: 500;
+  }}
+  .scope {{
+    background: #f7f5f6;
+    border-radius: 14px;
+    padding: 1.1rem 1.35rem;
+    margin-bottom: 1.75rem;
+  }}
+  .scope p {{
+    margin: 0;
+    font-size: 0.88rem;
+    color: #5c5e68;
+    line-height: 1.65;
   }}
   .lede {{
-    font-family: "Helvetica Neue", Arial, sans-serif;
-    font-size: 1.05rem;
-    margin: 0 0 2rem;
+    font-size: 1rem;
+    font-weight: 600;
+    color: #1c1d21;
+    margin: 0 0 0.25rem;
   }}
-  .empty {{ font-family: "Helvetica Neue", Arial, sans-serif; color: #4a4a4d; }}
+  .empty {{ color: #5c5e68; font-size: 0.95rem; }}
   h2 {{
-    font-family: "Helvetica Neue", Arial, sans-serif;
-    font-size: 0.78rem;
-    font-weight: 700;
+    font-size: 0.72rem;
+    font-weight: 800;
     text-transform: uppercase;
-    letter-spacing: 0.07em;
-    color: #a3123c;
-    margin: 2.6rem 0 0.9rem;
-    padding-bottom: 0.5rem;
-    border-bottom: 1px solid #201f1d;
+    letter-spacing: 0.08em;
+    color: #c0173f;
+    margin: 2.25rem 0 0.85rem;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
   }}
-  .count {{ color: #a19f98; font-weight: 400; }}
+  h2:first-of-type {{ margin-top: 1.75rem; }}
+  .count {{
+    color: #a9abb5;
+    font-weight: 700;
+    letter-spacing: normal;
+    text-transform: none;
+  }}
   ul {{ list-style: none; padding: 0; margin: 0; }}
   li {{
-    padding: 1.1rem 0;
-    border-bottom: 1px solid #e6e2da;
+    padding: 1rem 0;
+    border-bottom: 1px solid #f0f0f2;
   }}
-  li:first-child {{ padding-top: 0; }}
+  li:last-child {{ border-bottom: none; padding-bottom: 0.25rem; }}
+  li:first-of-type {{ padding-top: 0; }}
+  .item-head {{
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 0.75rem;
+  }}
   .item-head a {{
-    font-family: Georgia, serif;
-    font-size: 1.12rem;
-    font-weight: 700;
-    color: #201f1d;
+    font-size: 0.98rem;
+    font-weight: 650;
+    color: #1c1d21;
     text-decoration: none;
-    line-height: 1.35;
+    line-height: 1.4;
   }}
-  .item-head a:hover {{ color: #a3123c; text-decoration: underline; }}
-  .item-meta {{
-    font-family: "Helvetica Neue", Arial, sans-serif;
-    font-size: 0.76rem;
-    color: #8a8a8f;
-    margin-top: 0.3rem;
-  }}
+  .item-head a:hover {{ color: #c0173f; }}
   .tag {{
+    flex-shrink: 0;
+    margin-top: 0.15rem;
+    font-size: 0.66rem;
+    font-weight: 800;
     text-transform: uppercase;
-    letter-spacing: 0.04em;
-    font-weight: 700;
-    color: #a3123c;
+    letter-spacing: 0.05em;
+    color: #c0173f;
+    background: #fdedf1;
+    border-radius: 999px;
+    padding: 0.2rem 0.6rem;
+    white-space: nowrap;
   }}
+  .item-meta {{ font-size: 0.78rem; color: #9a9ca5; margin-top: 0.25rem; }}
   .reason {{
-    font-family: "Helvetica Neue", Arial, sans-serif;
-    color: #3a3a3d;
-    margin: 0.5rem 0 0;
-    font-size: 0.94rem;
+    color: #4a4b54;
+    margin: 0.4rem 0 0;
+    font-size: 0.9rem;
     line-height: 1.55;
+  }}
+  @media (max-width: 480px) {{
+    .item-head {{ flex-direction: column; gap: 0.35rem; }}
   }}
 </style>
 </head>
