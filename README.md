@@ -58,19 +58,20 @@ fetch (7 sources, full text) → dedupe against local state → classify for rel
    examined" count printed for those two sources reflects work done *this run*, not a stable
    total — the dedupe/relevance results themselves aren't affected by this.
 3. **Classify** — `policy_digest/classify.py`:
-   - a free keyword pre-filter cuts obviously unrelated items first;
-   - if `ANTHROPIC_API_KEY` is set, surviving candidates go to **Claude Haiku** in small
-     batches (structured tool-use call) for a real relevance judgment, confidence, one-line
-     reason, and category;
-   - without a key, the keyword-filtered items are used directly, with the reason built from
-     the actual matched text — the full *sentence* the keyword appears in (sentence-boundary
-     aware, not a fixed character radius, so it reads cleanly instead of cutting off mid-word),
-     quoted from the article/document body, preferring the body over the title (a committee
-     literally named "...(nodokļu)..." would otherwise "match" on every single sitting
-     regardless of that day's real agenda) — rather than a bare "keyword found" label. This is
-     the ceiling for what's possible without an LLM: a real one-line "why this matters to
-     startups" summary needs actual reading comprehension, which is exactly what the Claude
-     Haiku stage below does once a key is supplied.
+   - if `ANTHROPIC_API_KEY` is set, **every** fetched item — not just ones containing a
+     particular word — goes to **Claude Haiku** in small batches (structured tool-use call)
+     for a real relevance judgment, confidence, one-line reason, and category, based on
+     what the item's own text actually says;
+   - without a key, there's no model available to make that judgment, so this falls back to
+     a free keyword pre-filter instead, with the reason built from the actual matched text —
+     the full *sentence* the keyword appears in (sentence-boundary aware, not a fixed
+     character radius, so it reads cleanly instead of cutting off mid-word), quoted from the
+     article/document body, preferring the body over the title (a committee literally named
+     "...(nodokļu)..." would otherwise "match" on every single sitting regardless of that
+     day's real agenda) — rather than a bare "keyword found" label. This is the ceiling for
+     what's possible without an LLM: a real one-line "why this matters to startups" summary
+     needs actual reading comprehension, which is exactly what the Claude Haiku path above
+     does once a key is supplied.
 4. **Dedupe across sources** — `policy_digest/dedupe.py` merges items that are the same
    underlying article/document published on more than one source (e.g. EM and LIAA sometimes
    syndicate the identical press release, whether verbatim or with a reworded headline) into
