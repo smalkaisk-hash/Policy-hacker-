@@ -47,7 +47,7 @@
 - **[Budžeta un finanšu (nodokļu) komisijas sēde](https://titania.saeima.lv/livs/saeimasnotikumi.nsf/0/ECC79249FC0FABA7C2258E66004945CA?OpenDocument)** — 2026-09-08 · `Nodokļi un darbs`
   > Likumprojekts par grozījumiem Mikrouzņēmumu nodokļa likumā (Nr.1407/Lp14) tieši skar mazos uzņēmumus, tostarp potenciālos jaunuzņēmumus, izmaiņas nodokļu politikā.
 - **[Tautsaimniecības, agrārās, vides un reģionālās politikas komisijas sēde](https://titania.saeima.lv/livs/saeimasnotikumi.nsf/0/801DFEB953442F6EC2258E67004B7810?OpenDocument)** — 2026-09-08 · `Regulējums`
-  > Kibernoziegumu konvencijas papildu protokola un Elektronisko sakaru likuma grozījumi (1477/Lp14) var ietekmēt digitālo pakalpojumu sniedzējus un kibersecurity uzņēmumu regulējumu.
+  > Kibernoziegumu konvencijas papildu protokola un Elektronisko sakaru likuma grozījumi (1477/Lp14) var ietekmēt digitālo pakalpojumu sniedzējus un kiberdrošības uzņēmumu regulējumu.
 - **[Cilvēktiesību un sabiedrisko lietu komisijas Latgales apakškomisijas sēde](https://titania.saeima.lv/livs/saeimasnotikumi.nsf/0/D4797C3D060E3035C2258E5E00302462?OpenDocument)** — 2026-09-08 · `Finansējums`
   > Uzņēmējdarbības atbalsta pasākumi pašvaldībām ar sasniedzamiem rādītājiem un Latgales pierobežas teritoriju specifiku var iekļaut SME/jaunuzņēmumu atbalsta programmas.
 
