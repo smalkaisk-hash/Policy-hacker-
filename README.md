@@ -85,6 +85,15 @@ fetch (7 sources, full text) → dedupe against local state → classify for rel
    source's own scrape is already unique by construction; an earlier version of this compared
    same-source items too and briefly (incorrectly) merged distinct same-meeting agenda items
    that happened to share boilerplate text.
+   A second pass, `dedupe_semantic` (only runs if `ANTHROPIC_API_KEY` is set), catches what
+   text-similarity structurally cannot: the same real-world event covered by two
+   *independently written* articles — e.g. EM's own short ministry note about a company's
+   €10M investment vs. LIAA's much longer piece on that same investment, with different
+   quotes (a government minister, the company's founder, LIAA's director) and a different
+   angle. These share almost no overlapping wording, so no similarity threshold catches them
+   without also producing false positives elsewhere — recognizing "same event, different
+   write-up" needs actual reading comprehension, which is what this pass asks Claude Haiku to
+   do directly (batched per same-day, multi-source group of items).
 5. **Render** — `policy_digest/digest.py` writes a digest grouped by source, both as
    `output/digest_<date>.md` and a standalone `output/digest_<date>.html`. Output is Latvian
    throughout (the "startup-relevant" definition, category labels, everything) since this is a

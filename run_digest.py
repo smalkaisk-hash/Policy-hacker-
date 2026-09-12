@@ -23,7 +23,7 @@ from dotenv import load_dotenv
 load_dotenv()  # picks up ANTHROPIC_API_KEY from a local .env file, if present
 
 from policy_digest.classify import classify_items
-from policy_digest.dedupe import dedupe_items
+from policy_digest.dedupe import dedupe_items, dedupe_semantic
 from policy_digest.digest import render_html, render_markdown
 from policy_digest.sources import (
     fetch_altum_news,
@@ -102,7 +102,15 @@ def main():
     deduped_items = dedupe_items(all_new_items)
     if len(deduped_items) < len(all_new_items):
         merged_count = len(all_new_items) - len(deduped_items)
-        print(f"Merged {merged_count} cross-source duplicate(s) (same article, different site).")
+        print(f"Merged {merged_count} near-identical cross-source duplicate(s).")
+
+    before_semantic = len(deduped_items)
+    deduped_items = dedupe_semantic(deduped_items)
+    if len(deduped_items) < before_semantic:
+        print(
+            f"Merged {before_semantic - len(deduped_items)} more duplicate(s) — same event, "
+            "independently written articles (LLM pass)."
+        )
 
     print(f"\nClassifying {len(deduped_items)} candidate item(s) for startup relevance...")
     classifications = classify_items(deduped_items)
