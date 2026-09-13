@@ -165,7 +165,9 @@ def dedupe_semantic(items: list[Item]) -> list[Item]:
     text-similarity missed because they're independently written. No-ops (returns items
     unchanged) if ANTHROPIC_API_KEY isn't set — this needs real reading comprehension.
     """
-    api_key = os.environ.get("ANTHROPIC_API_KEY")
+    # .strip(): see the matching comment in classify.py — a stray trailing newline/space
+    # turns this into an illegal HTTP header value instead of a clean "no key" no-op.
+    api_key = (os.environ.get("ANTHROPIC_API_KEY") or "").strip()
     if not api_key:
         return items
 

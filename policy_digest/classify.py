@@ -252,7 +252,10 @@ def _classify_batch_with_llm(client, batch: list[Item]) -> list[Classification]:
 
 
 def classify_items(items: list[Item]) -> list[Classification]:
-    api_key = os.environ.get("ANTHROPIC_API_KEY")
+    # .strip(): a stray trailing newline/space from copy-pasting the key (e.g. into a
+    # GitHub Actions secret) makes it an illegal HTTP header value and breaks every API
+    # call with a confusing httpcore/httpx error — not what "no key set" should mean.
+    api_key = (os.environ.get("ANTHROPIC_API_KEY") or "").strip()
     if not api_key:
         # No model available to judge relevance from context, so fall back to a keyword
         # pre-filter — crude, but keeps the prototype runnable with zero external deps.
