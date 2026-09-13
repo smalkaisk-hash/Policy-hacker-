@@ -127,6 +127,26 @@ checked into [`sample_digest/`](sample_digest/) instead — that sample was gene
 `ANTHROPIC_API_KEY` set, i.e. the real Claude Haiku classification path, not the keyword
 fallback).
 
+## Hosting a live version (GitHub Pages)
+
+[`.github/workflows/digest.yml`](.github/workflows/digest.yml) runs the digest and publishes it
+to GitHub Pages — free, no server. One-time setup (both in the repo's GitHub web UI):
+
+1. **Add the API key as a secret**: Settings → Secrets and variables → Actions → New repository
+   secret → name `ANTHROPIC_API_KEY`, paste the key.
+2. **Turn on Pages**: Settings → Pages → Build and deployment → Source: **GitHub Actions**
+   (not "Deploy from a branch").
+
+After that, the page publishes:
+- **Automatically** every Monday (the `cron` schedule in the workflow), or
+- **On demand** — Actions tab → "Publish policy digest" → Run workflow button (top right) →
+  Run workflow. That's how to get a fresh version without waiting for the schedule.
+
+Each run replaces the whole published page with a fresh last-7-days snapshot (`--no-state`, so
+no cross-run dedupe bookkeeping needed on an ephemeral CI runner) — there's no old version to
+clear, the new deployment just overwrites it. The published URL is shown at Settings → Pages
+once it's deployed at least once, and also in the workflow run's summary page.
+
 ## Known limitations
 
 - **TAP portāls**: only the document version rendered by TAP's inline "structuralizer" preview is
