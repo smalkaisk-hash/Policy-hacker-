@@ -20,8 +20,13 @@ MAX_PAGES = 10  # safety cap; the loop normally stops early once past `since`
 
 
 def _parse_meeting_date(text: str) -> date | None:
-    # e.g. "10.09.2026. 16:00" -> 2026-09-10
-    day_part = text.strip().split(" ")[0]
+    # e.g. "10.09.2026. 16:00" -> 2026-09-10. Plain .split() (not .split(" ")) so this
+    # still works if the site uses a non-breaking space (U+00A0) between date and time,
+    # which HTML/CSS often inserts there and which .split(" ") would silently fail on.
+    parts = text.strip().split()
+    if not parts:
+        return None
+    day_part = parts[0]
     try:
         return datetime.strptime(day_part, "%d.%m.%Y.").date()
     except ValueError:
@@ -94,6 +99,12 @@ def fetch_mk_meetings(
             meeting_title = name_cell.get_text(strip=True) if name_cell else "(bez nosaukuma)"
 
             if meeting_date is None:
+                # Don't let this vanish with no trace — either the date cell is missing
+                # (markup change on the source site) or its text didn't match the expected
+                # format (e.g. an unexpected separator); either way that's worth knowing
+                # about rather than silently skipping the row.
+                raw = date_cell.get_text(strip=True) if date_cell else "(nav datuma šūnas)"
+                print(f"  ! could not parse meeting date {raw!r} for {meeting_title!r} — skipped")
                 continue
             if meeting_date < since:
                 stop_pagination = True

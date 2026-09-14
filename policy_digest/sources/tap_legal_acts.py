@@ -62,25 +62,39 @@ def _relevant_resource_urls(since: date, today: date) -> list[str]:
 
 
 def _policy_area_names(included: list[dict]) -> dict[str, str]:
-    return {
-        entry["id"]: entry["attributes"]["name"]
-        for entry in included
-        if entry.get("type") == "policy_areas"
-    }
+    # These two functions run once per resource file, BEFORE the per-entry loop below even
+    # starts — unlike a bad field on one act (skip that act, keep the rest), a KeyError here
+    # from one malformed "included" entry used to lose every act in the whole file. Only
+    # entries with a usable "id" are kept; a missing/null "name" degrades to "" rather than
+    # dropping the entry (its id, needed to resolve other acts' policy_areas, is still good).
+    result = {}
+    for entry in included:
+        if entry.get("type") != "policy_areas":
+            continue
+        entry_id = entry.get("id")
+        if not entry_id:
+            continue
+        result[entry_id] = (entry.get("attributes") or {}).get("name") or ""
+    return result
 
 
 def _document_version_map(included: list[dict]) -> dict[str, dict]:
-    return {
-        entry["id"]: entry
-        for entry in included
-        if entry.get("type") == "legal_act_document_versions"
-    }
+    result = {}
+    for entry in included:
+        if entry.get("type") != "legal_act_document_versions":
+            continue
+        entry_id = entry.get("id")
+        if not entry_id:
+            continue
+        result[entry_id] = entry
+    return result
 
 
 def _fetch_full_text(entry: dict, doc_version_map: dict[str, dict]) -> str:
     version_ids = [
         rel["id"]
         for rel in entry.get("relationships", {}).get("document_versions", {}).get("data", [])
+        if "id" in rel  # be tolerant of an unexpectedly-shaped relationship entry
     ]
     for version_id in version_ids:
         version = doc_version_map.get(version_id)
@@ -123,20 +137,32 @@ def fetch_tap_legal_acts(
             submitted_at = attrs.get("submitted_at")
             if not submitted_at:
                 continue
-            submitted_date = datetime.fromisoformat(submitted_at).date()
+            try:
+                submitted_date = datetime.fromisoformat(submitted_at).date()
+            except ValueError:
+                # One malformed record must not cost us every other (valid) record in
+                # this month's dataset — skip just this entry, not the whole source.
+                name = attrs.get("name", "")[:60]
+                print(f"  ! TAP portāls: could not parse submitted_at {submitted_at!r} for {name!r} — skipped")
+                continue
             if submitted_date < since:
                 continue
 
             area_ids = [
                 rel["id"]
                 for rel in entry.get("relationships", {}).get("policy_areas", {}).get("data", [])
+                if "id" in rel  # be tolerant of an unexpectedly-shaped relationship entry
             ]
             areas = ", ".join(area_names.get(i, "") for i in area_ids if area_names.get(i))
 
-            title = html.unescape(attrs.get("name", "")).strip()
-            institution = attrs.get("responsible_institution_name", "")
-            progress = attrs.get("progress_name", "")
-            url = entry.get("links", {}).get("web", "")
+            # `or ""`, not just `.get(key, "")`: a `.get` default only applies when the key
+            # is MISSING — a value explicitly present as JSON null still comes back as None
+            # and crashes html.unescape()/.strip() below (same bug class already hit and
+            # fixed in classify.py's "results" and this function's "links" handling above).
+            title = html.unescape(attrs.get("name") or "").strip()
+            institution = attrs.get("responsible_institution_name") or ""
+            progress = attrs.get("progress_name") or ""
+            url = (entry.get("links") or {}).get("web", "")  # "links": null is valid JSON:API
             # Status/progress can still change after we've first seen an act, so we always
             # refetch that (cheap — it's already in this monthly JSON dump); the act's own
             # text doesn't change once published, so skip re-fetching that expensively.

@@ -39,6 +39,23 @@ def _category_label(category: str) -> str:
     return CATEGORY_META.get(category, CATEGORY_META["other"])[0]
 
 
+def _oneline(s: str) -> str:
+    """Collapses any whitespace run — including embedded newlines — to a single space.
+    Scraped titles can contain a literal line break (BeautifulSoup's get_text(strip=True)
+    only trims the outer edges of each text node, not an internal "\\n" from a line break
+    in the source HTML), and an LLM's "one-line" reason isn't a hard guarantee either.
+    Both get embedded in single-line Markdown constructs (a list item, a link) where an
+    embedded newline corrupts the structure — splitting the item, and often the link,
+    across two lines instead of just looking odd.
+
+    Also tolerates None: this is the very last stage of the whole pipeline, after fetch,
+    dedupe, and classify have all already succeeded for potentially dozens of items — a
+    single bad field here (upstream defenses should already prevent it, but this is the
+    last line of defense) must not crash the write and discard all of that finished work.
+    """
+    return " ".join((s or "").split())
+
+
 def _group_by_source(classifications: list[Classification]) -> dict[str, list[Classification]]:
     grouped: dict[str, list[Classification]] = defaultdict(list)
     for c in classifications:
@@ -72,8 +89,10 @@ def render_markdown(classifications: list[Classification], since: date, run_date
         lines.append("")
         for c in items:
             label = _category_label(c.category)
-            lines.append(f"- **[{c.item.title}]({c.item.url})** — {c.item.date} · `{label}`")
-            lines.append(f"  > {c.reason}")
+            title = _oneline(c.item.title)
+            reason = _oneline(c.reason)
+            lines.append(f"- **[{title}]({c.item.url})** — {c.item.date} · `{label}`")
+            lines.append(f"  > {reason}")
         lines.append("")
 
     return "\n".join(lines)
@@ -122,11 +141,11 @@ def render_html(classifications: list[Classification], since: date, run_date: da
                 body_parts.append(
                     "<li>"
                     "<div class='item-head'>"
-                    f"<a href='{esc(c.item.url)}' target='_blank' rel='noopener'>{esc(c.item.title)}</a>"
+                    f"<a href='{esc(c.item.url)}' target='_blank' rel='noopener'>{esc(_oneline(c.item.title))}</a>"
                     f"<span class='tag'>{esc(label)}</span>"
                     "</div>"
                     f"<div class='item-meta'>{c.item.date}</div>"
-                    f"<p class='reason'>{esc(c.reason)}</p>"
+                    f"<p class='reason'>{esc(_oneline(c.reason))}</p>"
                     "</li>"
                 )
             body_parts.append("</ul>")

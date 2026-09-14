@@ -113,8 +113,13 @@ def main():
         )
 
     print(f"\nClassifying {len(deduped_items)} candidate item(s) for startup relevance...")
-    classifications = classify_items(deduped_items)
+    classifications, unclassified_items = classify_items(deduped_items)
     print(f"{len(classifications)} flagged as relevant.")
+    if unclassified_items:
+        print(
+            f"  ! {len(unclassified_items)} item(s) got no classification verdict this run "
+            "(API failure) — will be retried next run, not marked as seen."
+        )
 
     OUTPUT_DIR.mkdir(exist_ok=True)
     md_path = OUTPUT_DIR / f"digest_{today.isoformat()}.md"
@@ -125,7 +130,8 @@ def main():
     print(f"\nDigest written to:\n  {md_path}\n  {html_path}")
 
     if not args.no_state:
-        seen.update(it.url for it in all_new_items)
+        unclassified_urls = {it.url for it in unclassified_items}
+        seen.update(it.url for it in all_new_items if it.url not in unclassified_urls)
         save_seen(STATE_PATH, seen)
 
 

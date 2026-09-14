@@ -60,6 +60,11 @@ def fetch_news_listing(
             try:
                 article_date = datetime.fromisoformat(time_tag["datetime"]).date()
             except ValueError:
+                title_preview = link.get_text(strip=True)[:60]
+                print(
+                    f"  ! {source_name}: could not parse article date "
+                    f"{time_tag['datetime']!r} for {title_preview!r} — skipped"
+                )
                 continue
 
             if article_date < since:

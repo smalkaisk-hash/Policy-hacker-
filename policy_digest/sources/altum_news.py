@@ -72,7 +72,11 @@ def fetch_altum_news(since: date, seen: set[str] | None = None) -> list[Item]:
             continue
 
         article_date = _parse_date(date_tag.get_text())
-        if article_date is None or article_date < since:
+        if article_date is None:
+            title_preview = (text_tag.get_text(strip=True) if text_tag else link_tag.get_text(strip=True))[:60]
+            print(f"  ! Altum: could not parse article date {date_tag.get_text()!r} for {title_preview!r} — skipped")
+            continue
+        if article_date < since:
             continue
 
         title = text_tag.get_text(strip=True) if text_tag else link_tag.get_text(strip=True)

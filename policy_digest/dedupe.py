@@ -144,14 +144,22 @@ def _llm_duplicate_groups(client, items: list[Item]) -> list[list[int]]:
         f"[{i}] Source: {it.source}\nTitle: {it.title}\nText: {it.raw_text[:SEMANTIC_COMPARE_CHARS]}"
         for i, it in enumerate(items)
     )
-    message = client.messages.create(
-        model=SEMANTIC_MODEL,
-        max_tokens=500,
-        system=DEDUPE_SYSTEM_PROMPT,
-        tools=[DEDUPE_TOOL],
-        tool_choice={"type": "tool", "name": "group_duplicates"},
-        messages=[{"role": "user", "content": f"Group these {len(items)} items:\n\n{prompt_items}"}],
-    )
+    try:
+        message = client.messages.create(
+            model=SEMANTIC_MODEL,
+            max_tokens=500,
+            system=DEDUPE_SYSTEM_PROMPT,
+            tools=[DEDUPE_TOOL],
+            tool_choice={"type": "tool", "name": "group_duplicates"},
+            messages=[{"role": "user", "content": f"Group these {len(items)} items:\n\n{prompt_items}"}],
+        )
+    except Exception as exc:
+        # A transient API failure (rate limit, timeout, overload) here must not take down
+        # the whole run — every requests.get() call elsewhere in this codebase already
+        # degrades gracefully on failure; this LLM call should too. Worst case, this
+        # day's near-duplicates go unmerged instead of the entire digest being lost.
+        print(f"  ! semantic dedupe call failed ({exc}) — leaving these {len(items)} item(s) unmerged")
+        return [[i] for i in range(len(items))]
     for block in message.content:
         if block.type == "tool_use":
             groups = block.input.get("groups")

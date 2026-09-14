@@ -252,23 +252,39 @@ def _item_detail_text(item: Item) -> str:
     return item.raw_text[:DETAIL_CHAR_LIMIT]
 
 
-def _classify_batch_with_llm(client, batch: list[Item]) -> list[Classification]:
+def _classify_batch_with_llm(client, batch: list[Item]) -> tuple[list[Classification], list[Item]]:
+    """Returns (classifications, unclassified_items) — `unclassified_items` is every item
+    in `batch` that got no real verdict (API call failed outright, or the model's response
+    didn't include a usable result for it). Callers must not treat those as "processed":
+    see the `seen`-tracking note in classify_items and run_digest.py's main()."""
     prompt_items = "\n\n".join(
         f"[{i}] Source: {it.source}\nTitle: {it.title}\nDetails: {_item_detail_text(it)}"
         for i, it in enumerate(batch)
     )
-    message = client.messages.create(
-        model=MODEL,
-        max_tokens=4096,
-        system=SYSTEM_PROMPT,
-        tools=[CLASSIFY_TOOL],
-        tool_choice={"type": "tool", "name": "classify_items"},
-        messages=[{"role": "user", "content": f"Classify these {len(batch)} items:\n\n{prompt_items}"}],
-    )
+    try:
+        message = client.messages.create(
+            model=MODEL,
+            max_tokens=4096,
+            system=SYSTEM_PROMPT,
+            tools=[CLASSIFY_TOOL],
+            tool_choice={"type": "tool", "name": "classify_items"},
+            messages=[{"role": "user", "content": f"Classify these {len(batch)} items:\n\n{prompt_items}"}],
+        )
+    except Exception as exc:
+        # A transient API failure (rate limit, timeout, overload) here must not take down
+        # the whole run — every requests.get() call elsewhere in this codebase already
+        # degrades gracefully on failure; this LLM call should too. Worst case, this batch
+        # of items is missing from this run's digest instead of the entire digest being
+        # lost (including every already-classified batch before this one).
+        print(f"  ! classification call failed for a batch of {len(batch)} item(s) ({exc}) — skipped, will retry next run")
+        return [], list(batch)
 
     for block in message.content:
         if block.type == "tool_use":
-            results = block.input.get("results", [])
+            # .get(..., []) only substitutes the default when the key is MISSING — a
+            # response with the key present but explicitly null ("results": null) still
+            # comes back as None here and crashes enumerate() below. `or []` covers both.
+            results = block.input.get("results", []) or []
             # Defensive: don't let a malformed batch (seen in practice: the whole batch's
             # "index" fields came back as numeric strings, e.g. "0" instead of 0, so a
             # strict isinstance(..., int) check silently dropped all 10 items) crash the
@@ -280,6 +296,7 @@ def _classify_batch_with_llm(client, batch: list[Item]) -> list[Classification]:
             by_index: dict[int, dict] = {}
             for pos, r in enumerate(results):
                 if not isinstance(r, dict):
+                    print(f"  ! classification result at position {pos} is not an object ({r!r}) — skipped")
                     continue
                 idx = r.get("index")
                 if isinstance(idx, str) and idx.strip().lstrip("-").isdigit():
@@ -287,29 +304,47 @@ def _classify_batch_with_llm(client, batch: list[Item]) -> list[Classification]:
                 if not isinstance(idx, int) or isinstance(idx, bool):
                     print(f"  ! classification result at position {pos} has missing/invalid 'index' ({r.get('index')!r}) — skipped")
                     continue
+                if idx in by_index:
+                    print(f"  ! classification result at position {pos} has duplicate 'index' {idx} — overwriting the earlier result for it")
                 by_index[idx] = r
             out = []
+            unclassified = []
             for i, it in enumerate(batch):
                 r = by_index.get(i)
                 if r is None:
                     print(f"  ! no classification result for batch item {i} ({it.title[:60]!r}) — skipped")
+                    unclassified.append(it)
                     continue
-                if "relevant" not in r:
-                    print(f"  ! classification result for batch item {i} ({it.title[:60]!r}) missing 'relevant' — treating as NOT relevant")
+                # `r.get(key, default)` only substitutes the default for a MISSING key —
+                # "reason": null (key present, value explicitly null) still comes back as
+                # bare None, which crashes digest.py's rendering (str.split() on None) at
+                # the very last step of the whole pipeline, after every other stage already
+                # succeeded. Treat "present but null" the same as "missing": fall back to
+                # the same default, and warn either way.
+                if r.get("relevant") is None:
+                    print(f"  ! classification result for batch item {i} ({it.title[:60]!r}) missing/null 'relevant' — treating as NOT relevant")
+                if r.get("reason") is None:
+                    print(f"  ! classification result for batch item {i} ({it.title[:60]!r}) missing/null 'reason'")
                 out.append(
                     Classification(
                         item=it,
-                        relevant=r.get("relevant", False),
-                        confidence=r.get("confidence", 0.5),
-                        reason=r.get("reason", ""),
-                        category=r.get("category", "other"),
+                        relevant=r.get("relevant") if r.get("relevant") is not None else False,
+                        confidence=r.get("confidence") if r.get("confidence") is not None else 0.5,
+                        reason=r.get("reason") if r.get("reason") is not None else "",
+                        category=r.get("category") if r.get("category") is not None else "other",
                     )
                 )
-            return out
-    return []
+            return out, unclassified
+    return [], list(batch)
 
 
-def classify_items(items: list[Item]) -> list[Classification]:
+def classify_items(items: list[Item]) -> tuple[list[Classification], list[Item]]:
+    """Returns (relevant_classifications, unclassified_items). `unclassified_items` is
+    every item that got no real verdict this run (a batch's API call failed, or the
+    model's response didn't cover it) — callers must NOT mark those as "seen"/processed,
+    or a transient API hiccup would silently and permanently drop them from all future
+    runs instead of just this one.
+    """
     # .strip(): a stray trailing newline/space from copy-pasting the key (e.g. into a
     # GitHub Actions secret) makes it an illegal HTTP header value and breaks every API
     # call with a confusing httpcore/httpx error — not what "no key set" should mean.
@@ -317,6 +352,8 @@ def classify_items(items: list[Item]) -> list[Classification]:
     if not api_key:
         # No model available to judge relevance from context, so fall back to a keyword
         # pre-filter — crude, but keeps the prototype runnable with zero external deps.
+        # Every item is actually examined here (unlike an LLM batch failure), so nothing
+        # is "unclassified".
         candidates = [(item, *m) for item in items if (m := _keyword_match(item))]
         return [
             Classification(
@@ -327,14 +364,17 @@ def classify_items(items: list[Item]) -> list[Classification]:
                 category="other",
             )
             for item, kw, snippet in candidates
-        ]
+        ], []
 
     import anthropic
 
     client = anthropic.Anthropic(api_key=api_key)
     results: list[Classification] = []
+    unclassified: list[Item] = []
     for start in range(0, len(items), BATCH_SIZE):
         batch = items[start : start + BATCH_SIZE]
-        results.extend(_classify_batch_with_llm(client, batch))
+        batch_results, batch_unclassified = _classify_batch_with_llm(client, batch)
+        results.extend(batch_results)
+        unclassified.extend(batch_unclassified)
 
-    return [r for r in results if r.relevant]
+    return [r for r in results if r.relevant], unclassified
