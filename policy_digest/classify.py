@@ -67,20 +67,35 @@ CLASSIFY_TOOL = {
                 "type": "array",
                 "items": {
                     "type": "object",
+                    # Field order here is deliberate and load-bearing, not cosmetic: Claude
+                    # fills tool-call fields in the order they're declared, so "reason" must
+                    # come before "relevant"/"confidence" — otherwise the model commits to a
+                    # verdict first and writes "reason" afterward as a post-hoc rationalization
+                    # for whatever it already decided, instead of the verdict actually
+                    # following from the stated evidence. "category" comes first too, as a
+                    # cheap warm-up classification before the harder relevance call.
                     "properties": {
                         "index": {"type": "integer"},
-                        "relevant": {"type": "boolean"},
-                        "confidence": {"type": "number", "minimum": 0, "maximum": 1},
-                        "reason": {
-                            "type": "string",
-                            "description": "One short sentence IN LATVIAN explaining the verdict.",
-                        },
                         "category": {
                             "type": "string",
                             "enum": ["funding", "regulation", "tax_labor", "digitalization_innovation", "other"],
                         },
+                        "reason": {
+                            "type": "string",
+                            "description": (
+                                "One short sentence IN LATVIAN, written BEFORE you decide "
+                                "'relevant' below, not after. Must quote or closely paraphrase "
+                                "the specific fact in the item's own text (the eligibility "
+                                "criterion, size/stage restriction, amount, or mechanism — or "
+                                "the lack of one) that your verdict follows from. If you can't "
+                                "point to such a fact, that itself is the reason: say so, and "
+                                "the verdict below must be NOT relevant."
+                            ),
+                        },
+                        "relevant": {"type": "boolean"},
+                        "confidence": {"type": "number", "minimum": 0, "maximum": 1},
                     },
-                    "required": ["index", "relevant", "confidence", "reason", "category"],
+                    "required": ["index", "category", "reason", "relevant", "confidence"],
                 },
             }
         },
@@ -137,6 +152,11 @@ relevant, not relevant-with-caveats.
 Your one-line reason must point to something specific and concrete in the item's own text (the
 actual mechanism, amount, eligibility criterion, or clause) — never a generic assertion like
 "this is important for the startup ecosystem" with nothing in the item to back it up.
+
+Write the reason first and let the verdict follow from it — never decide "relevant" first and
+then compose a reason to justify what you already decided. If, while writing the reason, you
+find you're describing the institution/program/sector in general rather than something this
+specific item's own text establishes, that's a sign to reconsider before answering.
 
 Be decisive. Always write the one-line reason in Latvian, regardless of what language the
 source item is in — the digest this feeds is Latvian-only. Use the proper Latvian term
