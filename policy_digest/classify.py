@@ -95,7 +95,14 @@ agenda items, ministry and agency news) and decide which are relevant to startup
 
 Mark an item RELEVANT if it involves any of:
 - funding or support programs for startups/SMEs (grants, EU funds, accelerator/incubator
-  programs, investment/venture capital initiatives, LIAA/Altum programs)
+  programs, investment/venture capital initiatives, LIAA/Altum programs) — but only when the
+  program's own eligibility is actually scoped to startups/SMEs/early-stage companies (a size,
+  turnover, or company-age cap; a jaunuzņēmumi/MVU-branded program). An Altum or LIAA loan or
+  grant open to "Latvijas uzņēmumi" in general, with no size or stage restriction, is NOT
+  relevant merely because Altum/LIAA are institutions that also run SME programs elsewhere —
+  and a news item about one specific company receiving such general-eligibility financing is
+  NOT relevant unless the item's own text says that company is a startup/SME (its size, age,
+  or explicit SME/jaunuzņēmums framing), not just that it's "a Latvian company"
 - legal or regulatory changes affecting startups, SMEs, or tech companies (company law, tax
   treatment incl. reinvested profit or employee stock options, labor law, digital services or
   AI regulation, public procurement rules relevant to tech vendors)
