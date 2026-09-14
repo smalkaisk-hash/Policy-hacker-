@@ -222,7 +222,7 @@ def _classify_batch_with_llm(client, batch: list[Item]) -> list[Classification]:
     )
     message = client.messages.create(
         model=MODEL,
-        max_tokens=2000,
+        max_tokens=4096,
         system=SYSTEM_PROMPT,
         tools=[CLASSIFY_TOOL],
         tool_choice={"type": "tool", "name": "classify_items"},
@@ -232,16 +232,32 @@ def _classify_batch_with_llm(client, batch: list[Item]) -> list[Classification]:
     for block in message.content:
         if block.type == "tool_use":
             results = block.input.get("results", [])
-            by_index = {r["index"]: r for r in results}
+            # Defensive: don't let a malformed batch (seen in practice: the whole batch's
+            # "index" fields came back as numeric strings, e.g. "0" instead of 0, so a
+            # strict isinstance(..., int) check silently dropped all 10 items) crash the
+            # run or vanish items with no trace. Prefer the model's own "index" (coerced
+            # from a numeric string if needed, since order isn't guaranteed to match the
+            # request), falling back to array position when "index" is missing/unusable.
+            by_index: dict[int, dict] = {}
+            for pos, r in enumerate(results):
+                if not isinstance(r, dict):
+                    continue
+                idx = r.get("index")
+                if isinstance(idx, str) and idx.strip().lstrip("-").isdigit():
+                    idx = int(idx)
+                if not isinstance(idx, int) or isinstance(idx, bool):
+                    idx = pos
+                by_index[idx] = r
             out = []
             for i, it in enumerate(batch):
                 r = by_index.get(i)
                 if r is None:
+                    print(f"  ! no classification result for batch item {i} ({it.title[:60]!r}) — skipped")
                     continue
                 out.append(
                     Classification(
                         item=it,
-                        relevant=r["relevant"],
+                        relevant=r.get("relevant", False),
                         confidence=r.get("confidence", 0.5),
                         reason=r.get("reason", ""),
                         category=r.get("category", "other"),
