@@ -236,8 +236,10 @@ def _classify_batch_with_llm(client, batch: list[Item]) -> list[Classification]:
             # "index" fields came back as numeric strings, e.g. "0" instead of 0, so a
             # strict isinstance(..., int) check silently dropped all 10 items) crash the
             # run or vanish items with no trace. Prefer the model's own "index" (coerced
-            # from a numeric string if needed, since order isn't guaranteed to match the
-            # request), falling back to array position when "index" is missing/unusable.
+            # from a numeric string if needed). Order isn't guaranteed to match the
+            # request, so an entry with a missing/unusable index is skipped rather than
+            # guessed from array position — a wrong guess would silently overwrite a
+            # different item's real result with no trace at all.
             by_index: dict[int, dict] = {}
             for pos, r in enumerate(results):
                 if not isinstance(r, dict):
@@ -246,7 +248,8 @@ def _classify_batch_with_llm(client, batch: list[Item]) -> list[Classification]:
                 if isinstance(idx, str) and idx.strip().lstrip("-").isdigit():
                     idx = int(idx)
                 if not isinstance(idx, int) or isinstance(idx, bool):
-                    idx = pos
+                    print(f"  ! classification result at position {pos} has missing/invalid 'index' ({r.get('index')!r}) — skipped")
+                    continue
                 by_index[idx] = r
             out = []
             for i, it in enumerate(batch):
@@ -254,6 +257,8 @@ def _classify_batch_with_llm(client, batch: list[Item]) -> list[Classification]:
                 if r is None:
                     print(f"  ! no classification result for batch item {i} ({it.title[:60]!r}) — skipped")
                     continue
+                if "relevant" not in r:
+                    print(f"  ! classification result for batch item {i} ({it.title[:60]!r}) missing 'relevant' — treating as NOT relevant")
                 out.append(
                     Classification(
                         item=it,
