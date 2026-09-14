@@ -219,6 +219,16 @@ def _item_detail_text(item: Item) -> str:
     body = _body_text(item)
     if len(body) < MIN_SUBSTANTIVE_BODY_LEN:
         return NO_BODY_MARKER
+    if len(item.raw_text) > DETAIL_CHAR_LIMIT:
+        # Silent truncation here is dangerous specifically because eligibility/scope wording
+        # ("paredzēts maziem un vidējiem uzņēmumiem", size caps, etc.) is often in the last
+        # paragraph of a press release — cut it and the model has no way to know it's missing,
+        # so it can't even hedge. Printing this makes a wrong verdict traceable to "didn't see
+        # the whole thing" instead of looking identical to "saw it all and judged wrong".
+        print(
+            f"  ! {item.source}: article text truncated to {DETAIL_CHAR_LIMIT} chars for "
+            f"classification ({item.title[:60]!r}) — content past this point wasn't seen"
+        )
     return item.raw_text[:DETAIL_CHAR_LIMIT]
 
 
