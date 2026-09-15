@@ -36,9 +36,9 @@ jobs:
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
         run: |
-          # --no-state: each published page is a fresh, independent snapshot of the last 7
+          # --no-state: each published page is a fresh, independent snapshot of the last 30
           # days — no need for cross-run dedupe state on a scheduled/ephemeral CI runner.
-          python run_digest.py --days 7 --no-state
+          python run_digest.py --days 30 --no-state
 
       - name: Prepare Pages site
         run: |

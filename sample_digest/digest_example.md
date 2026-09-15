@@ -3,10 +3,10 @@
 # Politikas monitorings
 #### 2026-08-16 – 2026-09-15
 
-> Jaunuzņēmumiem atbilstošs ir ieraksts, kas pēc būtības ietekmē jaunuzņēmumu darbību, finansējumu vai izaugsmes vidi — piemēram, jauns atbalsts vai finansējuma iespēja, izmaiņas nodokļu vai darba tiesību regulējumā, vai iniciatīva inovāciju un digitalizācijas jomā. Katru ierakstu izvērtē mākslīgais intelekts, izlasot tā pilno saturu, nevis meklējot atsevišķus atslēgvārdus.
+> Jaunuzņēmumiem atbilstošs ir ieraksts, kas pēc būtības ietekmē jaunuzņēmumu darbību, finansējumu vai izaugsmes vidi — piemēram, jauns atbalsts vai finansējuma iespēja, izmaiņas nodokļu vai darba tiesību regulējumā, vai iniciatīva inovāciju un digitalizācijas jomā. Katru ierakstu izvērtē mākslīgais intelekts, izlasot tā pilno saturu — taču ieraksts tiek iekļauts tikai tad, ja tā paša tekstā tieši minēts vārds "jaunuzņēmums" (vai "starta uzņēmums"/"startup"); ar mazā un vidējā uzņēmuma (MVU) statusu vien nepietiek.
 
-**14 atbilstoši ieraksti no 5 avotiem.**
-*Pārbaudītie avoti: TAP portāls (1), Valsts sekretāru sanāksme (0), Ministru kabineta protokoli (3), Ekonomikas ministrija (2), LIAA (5), Altum (0), Saeimas komisiju darba kārtības (3)*
+**13 atbilstoši ieraksti no 5 avotiem.**
+*Pārbaudītie avoti: TAP portāls (1), Valsts sekretāru sanāksme (0), Ministru kabineta protokoli (3), Ekonomikas ministrija (1), LIAA (5), Altum (0), Saeimas komisiju darba kārtības (3)*
 
 ## Finansējuma iespējas (10)
 
@@ -42,12 +42,7 @@
 - **[Grozījumi Ministru kabineta 2024. gada 3. decembra noteikumos Nr. 775 "Eiropas Savienības kohēzijas politikas programmas 2021.–2027. gadam 1.2.1. specifiskā atbalsta mērķa "Pētniecības un inovāciju kapacitātes stiprināšana un progresīvu tehnoloģiju ieviešana uzņēmumiem" 1.2.1.1. pasākuma "Atbalsts jaunu produktu attīstībai un internacionalizācijai" otrās kārtas īstenošanas noteikumi"](https://tapportals.mk.gov.lv/legal_acts/fc909198-2eac-4c92-b18b-783e48cc059e)** — 2026-08-28 · `Finansējums`
   > ES kohēzijas politikas programmas pasākums "Atbalsts jaunu produktu attīstībai un internacionalizācijai" tieši adresē sadarbības tīklu dalībniekiem, tostarp MVU, ar finansējuma nodrošināšanu, kas ir jaunuzņēmumiem attiecināms atbalsts.
 
-## Regulējums un iniciatīvas (4)
-
-### Ekonomikas ministrija (1)
-
-- **[Valainis ar piecu ES valstu kolēģiem pārrunā Digitālā omnibusa ietekmi uz uzņēmējdarbību](https://www.em.gov.lv/lv/jaunums/valainis-ar-piecu-es-valstu-kolegiem-parruna-digitala-omnibusa-ietekmi-uz-uznemejdarbibu)** — 2026-09-03 · `Regulējums`
-  > Ministra diskusija par Digitālā omnibusa ietekmi uz uzņēmējdarbību, īpaši mazo un vidējo uzņēmumu un jaunuzņēmumu skaitlī, un viņu saskarsmē ar administratīvo slogu digitālajā regulējumā.
+## Regulējums un iniciatīvas (3)
 
 ### Saeimas komisiju darba kārtības (3)
 
