@@ -18,11 +18,27 @@ import json
 import os
 import re
 from dataclasses import dataclass
+from datetime import date
 
 from .sources.base import Item
 
 MODEL = "claude-haiku-4-5-20251001"
 BATCH_SIZE = 10
+# Caught in production 2026-09-15: even after tightening SYSTEM_PROMPT with explicit
+# negative examples, a hedge-word/category-truism failure (e.g. "var ietekmēt...
+# jaunuzņēmumus" with no concrete mechanism) kept recurring on items the examples didn't
+# cover verbatim — LLM prompt instructions are probabilistic, not a guarantee. `confidence`
+# correlates well with exactly these cases in practice (0.60-0.75 on confirmed-bad items
+# vs. 0.92-0.98 on confirmed-good ones — see evals/classification_evals.py). Rather than
+# surface a "verify manually" flag and lean on a human to catch what the classifier
+# missed, an item below this bar is held back from the digest entirely — every item that
+# DOES appear needs no second-guessing. The cost is recall (an occasional true positive
+# with thin evidence goes unreported), which is the cheaper failure mode for this tool
+# than a low-confidence claim reaching the digest and eroding trust in all of it. Only
+# applies to the real LLM path below — the no-API-key keyword fallback's confidence=0.5
+# is a flat placeholder, not a calibrated score, so filtering on it there would silence
+# that mode entirely.
+MIN_CONFIDENCE_TO_INCLUDE = 0.75
 # Matches the char cap sources already truncate full document/article text to (see
 # tap_legal_acts.FULL_TEXT_CHAR_LIMIT) — high enough that the model sees the actual
 # substance of an item, not just its title.
@@ -39,6 +55,21 @@ NO_BODY_MARKER = (
     "par sevi nepārprotami nenorāda uz jaunuzņēmumu/MVU atbalstu vai regulējumu, atzīmē "
     "NOT relevant.]"
 )
+
+# Product decision 2026-09-16: relevance requires the literal word "startup" (or its
+# Latvian form/synonym) somewhere in the item's OWN text — no SME/MVU carve-out, no
+# VC/incubator/accelerator carve-out. Deliberately narrower than earlier revisions of this
+# list: a program scoped to "mazie un vidējie uzņēmumi" that never says "jaunuzņēmums"
+# does NOT count, and neither does a venture-capital-named program that never uses the
+# word either — see the matching SYSTEM_PROMPT rewrite below. Applied globally to every
+# classified item (any category, any source), not just funding items — see
+# _has_explicit_startup_signal below.
+EXPLICIT_STARTUP_KEYWORDS = ["jaunuzņēm", "starta uzņēm", "startup", "start-up"]
+
+
+def _has_explicit_startup_signal(text: str) -> bool:
+    lowered = (text or "").lower()
+    return any(kw in lowered for kw in EXPLICIT_STARTUP_KEYWORDS)
 
 # Definition of "startup-relevant" for this digest (see README for the full writeup):
 # funding & support programs, regulatory/legal/tax changes affecting startups or SMEs,
@@ -94,6 +125,17 @@ CLASSIFY_TOOL = {
                         },
                         "relevant": {"type": "boolean"},
                         "confidence": {"type": "number", "minimum": 0, "maximum": 1},
+                        "deadline": {
+                            "type": "string",
+                            "description": (
+                                "An explicit application/submission/public-consultation "
+                                "deadline date stated in the item's own text, as ISO 8601 "
+                                "(YYYY-MM-DD) — e.g. 'līdz 2026. gada 30. septembrim' becomes "
+                                "'2026-09-30'. Only set this when the text states an actual "
+                                "calendar date; never infer or guess one from context. Omit "
+                                "this field entirely if no explicit deadline is stated."
+                            ),
+                        },
                     },
                     "required": ["index", "category", "reason", "relevant", "confidence"],
                 },
@@ -108,20 +150,30 @@ SYSTEM_PROMPT = """You are a policy analyst for startin.lv, a Latvian startup ac
 You review Latvian government documents (draft legislation, cabinet/state-secretary meeting
 agenda items, ministry and agency news) and decide which are relevant to startups.
 
-Mark an item RELEVANT if it involves any of:
-- funding or support programs for startups/SMEs (grants, EU funds, accelerator/incubator
-  programs, investment/venture capital initiatives, LIAA/Altum programs) — but only when the
-  program's own eligibility is actually scoped to startups/SMEs/early-stage companies (a size,
-  turnover, or company-age cap; a jaunuzņēmumi/MVU-branded program). An Altum or LIAA loan or
-  grant open to "Latvijas uzņēmumi" in general, with no size or stage restriction, is NOT
-  relevant merely because Altum/LIAA are institutions that also run SME programs elsewhere —
-  and a news item about one specific company receiving such general-eligibility financing is
-  NOT relevant unless the item's own text says that company is a startup/SME (its size, age,
-  or explicit SME/jaunuzņēmums framing), not just that it's "a Latvian company"
-- legal or regulatory changes affecting startups, SMEs, or tech companies (company law, tax
-  treatment incl. reinvested profit or employee stock options, labor law, digital services or
-  AI regulation, public procurement rules relevant to tech vendors)
-- draft legislation or government initiatives on innovation, digitalization, or entrepreneurship
+Mark an item RELEVANT only if it involves any of:
+- funding or support programs FOR STARTUPS SPECIFICALLY (grants, EU funds,
+  accelerator/incubator programs, investment/venture capital initiatives, LIAA/Altum
+  programs) — the item's own text must itself use the word "jaunuzņēmums"/"jaunuzņēmumi"
+  (or "starta uzņēmums"/the English "startup") to describe who the program/funding is for.
+  Being scoped to SMEs ("mazie un vidējie uzņēmumi"/MVU) is NOT enough on its own — an
+  SME-wide program that never says "jaunuzņēmums" is NOT relevant. Being a venture/risk
+  capital ("riska kapitāls"/"iespējkapitāls") program is NOT enough on its own either — a VC
+  fund that never says "jaunuzņēmums"/"startup" anywhere in its own text is NOT relevant,
+  even though VC is usually startup-oriented in practice. A funding-discovery tool or
+  wizard open to "companies of any size" is NOT relevant unless it too uses the word
+  somewhere. A news item about one specific company receiving financing (e.g. an Altum/LIAA
+  loan, an investment) is NOT relevant unless the item's own text calls that company a
+  "jaunuzņēmums"/"startup" — "SME", "innovative company", "tech company", or "Latvian
+  company" is not the same word and does not count
+- legal or regulatory changes affecting startups specifically (company law, tax treatment
+  incl. reinvested profit or employee stock options, labor law, digital services or AI
+  regulation, public procurement rules relevant to tech vendors) — again, the item's own
+  text must itself say "jaunuzņēmums"/"jaunuzņēmumi"/"startup" somewhere in connection with
+  the change; a change that applies to companies or SMEs in general without that word is
+  NOT relevant
+- draft legislation or government initiatives on innovation, digitalization, or
+  entrepreneurship that explicitly names startups ("jaunuzņēmums"/"jaunuzņēmumi"/"startup")
+  as who it's for or about
 
 Mark it NOT relevant if it's routine administrative/personnel/ceremonial business, or concerns a
 sector with no plausible startup angle (e.g. agricultural subsidies unrelated to agtech,
@@ -130,7 +182,37 @@ e.g. requalification or activation measures for the unemployed, youth not in emp
 economically inactive people — even when the source text tacks on a generic line about
 supporting "entrepreneurship" or the "startup ecosystem": that connection only counts if the
 item's actual substance (funding mechanism, eligibility, regulatory change) is about startups
-or SMEs specifically, not general jobseekers or self-employment in general.
+specifically (using that literal word — see the hard requirement below), not general
+jobseekers or self-employment in general.
+
+Also NOT relevant: a delegation, trade mission, conference, or ceremonial event announcement
+that merely mentions startups as one invited/attending category, with no funding mechanism,
+eligibility criterion, or regulatory change of its own — "startups get to attend/participate"
+is not the same as "this affects startups". And a youth/school entrepreneurship education
+program (e.g. teaching schoolchildren to run a mock "skolēnu mācību uzņēmums") is NOT relevant
+regardless of how much its own materials use the word "uzņēmējdarbība" — this digest is about
+companies, not students role-playing as companies.
+
+Events are not policy — this digest tracks government funding programs and regulatory
+changes, not the calendar of contests, courses, and volunteer drives that agencies also run.
+Mark these NOT relevant even when real money or a formal application is involved, because the
+item itself is a one-off event, not a funding mechanism or regulatory change:
+- a business-idea/innovation contest or award announcement (e.g. "Ideju Kauss", "Eksporta un
+  inovācijas balva") — prize money for winning a competition is not a funding program with
+  ongoing eligibility criteria, and a follow-up item reporting how many people/ideas registered
+  for one is even further from being policy
+- a call recruiting mentors, judges, or volunteers to support founders (e.g. "LIAA aicina
+  pieredzējušus uzņēmējus kļūt par mentoriem") — this is staffing an advisory pool, not funding
+  or regulating startups themselves
+- a training/course cohort launch, enrollment milestone, or "programmas kārtas sākums"
+  announcement for an education/mentorship offering (e.g. a Mini MBA cohort, a mentorship
+  program's next phase starting) — a course has a start date and syllabus, not eligibility
+  criteria for ongoing funding, even when it's EU-funded or free
+This is distinct from an actual incubation/acceleration or financing program that provides
+direct financial support with a stated amount/percentage and a formal application deadline
+(e.g. "finansiāls atbalsts līdz 70%", a grant, a loan, a venture-capital investment) — that
+remains relevant funding, not an event, even if it also includes mentorship as part of the
+package.
 
 Base your verdict strictly on what the item's own text says, not on what a program like this
 could plausibly also help with. If you have to reach or infer a startup connection the text
@@ -148,6 +230,42 @@ approving next year's line-item budget doesn't change what startups can or can't
 for hedge words in your own reasoning ("could potentially", "may affect", "is relevant to
 X in general") — if that's the strongest connection you can state, the honest verdict is NOT
 relevant, not relevant-with-caveats.
+
+Worked examples of this hedge-word failure — all three are NOT relevant, even though each is
+real government business genuinely touching companies in general: a minister's meeting summary
+noting an EU regulation "could affect SMEs and startups" with no bill text yet; a cybercrime
+convention ratification bill justified only as "affecting digital service providers"; a media
+law amendment justified only as "relevant to the digital services sector, including tech
+startups". Each names a broad sector, not a mechanism specific to startups/SMEs — that is the
+failure this section describes, not a real connection, no matter how plausible it sounds.
+
+Be very specific for startups, not just "business" in general — this is the single most common
+way an item wrongly passes. A funding program, grant competition, or investment scheme that is
+open to companies of any size/age/turnover is NOT relevant just because startups are technically
+eligible to apply like everyone else, and reasoning like "the program is oriented toward
+companies with mature/high-readiness projects" or "this supports business development" is
+describing ordinary commercial activity, not a startup-specific mechanism — do not let it read
+as a size/stage cap when it isn't one. More worked examples of this exact failure, all NOT
+relevant: an open project competition funding "high-readiness" dual-use/industrial R&D projects
+for companies in general, with no startup/SME/early-stage eligibility criterion stated; a
+regional development measure funding "private investment growth" or "territory revitalization"
+based on local business needs, with no size/age scoping; a portal or system modernization for
+submitting loan applications that explicitly serves "all [Altum/LIAA] clients", not a
+startup-specific product; a news item about a specific company (however innovative-sounding,
+e.g. an AI or defense-tech company) receiving investment or opening an R&D center, where the
+item's own text never states that company's size, age, or an explicit startup/SME/jaunuzņēmums
+label — "international company" or "tech company" is not "startup", and a vague closing line
+like "this strengthens the innovation ecosystem" is the ecosystem-truism failure, not a real
+connection to this specific item.
+
+Hard requirement, no exceptions: if the item's own text never uses the word
+"jaunuzņēmums"/"jaunuzņēmumi", "starta uzņēmums", or the English "startup"/"start-up"
+anywhere in connection with the funding/regulation itself, the item is NOT relevant — full
+stop, regardless of how startup-adjacent the program, institution, or sector sounds. There
+are no carve-outs for SME scoping, VC/risk-capital framing, funding-discovery tools, or any
+other inferred connection: this literal word is the only signal that counts. (This is
+enforced in code as well as here, so guessing around it doesn't help — see
+`classify._has_explicit_startup_signal`.)
 
 Your one-line reason must point to something specific and concrete in the item's own text (the
 actual mechanism, amount, eligibility criterion, or clause) — never a generic assertion like
@@ -171,6 +289,10 @@ class Classification:
     confidence: float
     reason: str
     category: str
+    # ISO 8601 date string (YYYY-MM-DD), or None if the item states no explicit deadline
+    # (application/submission/consultation-comment-period) — see _validate_deadline and
+    # _extract_deadline_fallback below for how each classification path fills this in.
+    deadline: str | None = None
 
 
 # Splits on sentence-ending punctuation followed by a capital letter (Latvian included) —
@@ -235,6 +357,78 @@ def _keyword_match(item: Item) -> tuple[str, str] | None:
     return None
 
 
+_ISO_DATE_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
+
+
+def _validate_deadline(raw, item: Item) -> str | None:
+    """The LLM's 'deadline' field is untrusted input just like every other tool-use
+    field in this file (see module docstring / CLAUDE.md) — it could come back in a
+    format that isn't the ISO date we asked for, or not be a string at all. Never let
+    a malformed deadline crash the run; just drop it and say why.
+    """
+    if raw is None:
+        return None
+    if not isinstance(raw, str) or not _ISO_DATE_RE.match(raw):
+        print(f"  ! classification result for {item.title[:60]!r} has malformed 'deadline' ({raw!r}) — ignored")
+        return None
+    try:
+        date.fromisoformat(raw)
+    except ValueError:
+        print(f"  ! classification result for {item.title[:60]!r} has invalid 'deadline' date ({raw!r}) — ignored")
+        return None
+    return raw
+
+
+# Latvian month names in the genitive case, as they appear in "līdz <year>. gada <day>.
+# <month>" phrasing (the standard way a Latvian government text states a deadline date).
+_LV_MONTHS_GENITIVE = {
+    "janvārim": 1, "februārim": 2, "martam": 3, "aprīlim": 4, "maijam": 5,
+    "jūnijam": 6, "jūlijam": 7, "augustam": 8, "septembrim": 9,
+    "oktobrim": 10, "novembrim": 11, "decembrim": 12,
+}
+_DEADLINE_LONG_RE = re.compile(
+    r"līdz\s+(\d{4})\.\s*gada\s+(\d{1,2})\.\s*(" + "|".join(_LV_MONTHS_GENITIVE) + r")",
+    re.IGNORECASE,
+)
+_DEADLINE_NUMERIC_RE = re.compile(r"līdz\s+(\d{1,2})\.(\d{1,2})\.(\d{4})")
+_DEADLINE_ISO_RE = re.compile(r"līdz\s+(\d{4})-(\d{2})-(\d{2})")
+
+
+def _extract_deadline_fallback(text: str) -> str | None:
+    """No-API-key path's equivalent of the LLM's 'deadline' extraction: a few common
+    Latvian phrasings for "apply/comment by <date>". Best-effort only — unlike the LLM
+    path this can't understand phrasing it wasn't explicitly written for, but it's free
+    and catches the standard government-text date formats.
+    """
+    m = _DEADLINE_LONG_RE.search(text.lower())
+    if m:
+        year, day, month_name = m.group(1), m.group(2), m.group(3)
+        month = _LV_MONTHS_GENITIVE.get(month_name)
+        if month:
+            try:
+                return date(int(year), month, int(day)).isoformat()
+            except ValueError:
+                return None
+
+    m = _DEADLINE_NUMERIC_RE.search(text)
+    if m:
+        day, month, year = m.groups()
+        try:
+            return date(int(year), int(month), int(day)).isoformat()
+        except ValueError:
+            return None
+
+    m = _DEADLINE_ISO_RE.search(text)
+    if m:
+        year, month, day = m.groups()
+        try:
+            return date(int(year), int(month), int(day)).isoformat()
+        except ValueError:
+            return None
+
+    return None
+
+
 def _item_detail_text(item: Item) -> str:
     body = _body_text(item)
     if len(body) < MIN_SUBSTANTIVE_BODY_LEN:
@@ -252,19 +446,35 @@ def _item_detail_text(item: Item) -> str:
     return item.raw_text[:DETAIL_CHAR_LIMIT]
 
 
-def _classify_batch_with_llm(client, batch: list[Item]) -> tuple[list[Classification], list[Item]]:
+def _classify_batch_with_llm(
+    client, batch: list[Item], _retry: bool = True
+) -> tuple[list[Classification], list[Item]]:
     """Returns (classifications, unclassified_items) — `unclassified_items` is every item
     in `batch` that got no real verdict (API call failed outright, or the model's response
     didn't include a usable result for it). Callers must not treat those as "processed":
-    see the `seen`-tracking note in classify_items and run_digest.py's main()."""
+    see the `seen`-tracking note in classify_items and run_digest.py's main().
+
+    `_retry` is internal (see the isinstance(results, str) handling below): a single
+    automatic retry of the whole batch when the model's response is unusable, since that
+    has been observed to be a one-off stochastic formatting quirk, not a deterministic
+    bug — a fresh attempt at the same batch typically just works. Never recurses more
+    than once (the recursive call itself passes _retry=False), so a batch that keeps
+    failing costs at most 2 API calls, not an unbounded loop.
+    """
+    detail_texts = [_item_detail_text(it) for it in batch]
     prompt_items = "\n\n".join(
-        f"[{i}] Source: {it.source}\nTitle: {it.title}\nDetails: {_item_detail_text(it)}"
-        for i, it in enumerate(batch)
+        f"[{i}] Source: {it.source}\nTitle: {it.title}\nDetails: {detail}"
+        for i, (it, detail) in enumerate(zip(batch, detail_texts))
     )
     try:
         message = client.messages.create(
             model=MODEL,
-            max_tokens=4096,
+            # 8192 (not the original 4096): cheap insurance against genuinely running out
+            # of output budget on a large/verbose batch, though see the retry logic below
+            # for the failure mode actually observed in practice (a formatting quirk, not
+            # truncation) — 10 items x (category + one-sentence reason + relevant +
+            # confidence + optional deadline) comfortably fits under either limit normally.
+            max_tokens=8192,
             system=SYSTEM_PROMPT,
             tools=[CLASSIFY_TOOL],
             tool_choice={"type": "tool", "name": "classify_items"},
@@ -285,6 +495,36 @@ def _classify_batch_with_llm(client, batch: list[Item]) -> tuple[list[Classifica
             # response with the key present but explicitly null ("results": null) still
             # comes back as None here and crashes enumerate() below. `or []` covers both.
             results = block.input.get("results", []) or []
+            # Seen in practice on real batches of Latvian government titles (which are
+            # themselves full of embedded quote marks, e.g. 'Noteikumu projekts
+            # "Grozījumi..."'): the model sometimes double-encodes the whole "results"
+            # array as a JSON *string* instead of a native array, and in doing so breaks
+            # its own JSON by mishandling those embedded quotes — so the string doesn't
+            # even parse back to valid JSON. Confirmed NOT a max_tokens budget problem
+            # (raising max_tokens to 8192 above didn't stop it, and it happens well under
+            # that limit) — it's a stochastic model formatting quirk, so retry the whole
+            # batch once rather than just giving up on ~10 items at a time. Without this
+            # recovery at all, enumerate() below would iterate the string
+            # character-by-character — thousands of spurious "not an object" warnings.
+            if isinstance(results, str):
+                try:
+                    parsed = json.loads(results)
+                except (json.JSONDecodeError, ValueError):
+                    parsed = None
+                if isinstance(parsed, list):
+                    results = parsed
+                elif _retry:
+                    print(
+                        f"  ! batch's 'results' came back unusable ({len(results)} chars, "
+                        f"stop_reason={message.stop_reason}) — retrying this batch once"
+                    )
+                    return _classify_batch_with_llm(client, batch, _retry=False)
+                else:
+                    print(
+                        f"  ! batch's 'results' still unusable after retry ({len(results)} "
+                        "chars) — skipped, will retry next run"
+                    )
+                    results = []
             # Defensive: don't let a malformed batch (seen in practice: the whole batch's
             # "index" fields came back as numeric strings, e.g. "0" instead of 0, so a
             # strict isinstance(..., int) check silently dropped all 10 items) crash the
@@ -325,13 +565,35 @@ def _classify_batch_with_llm(client, batch: list[Item]) -> tuple[list[Classifica
                     print(f"  ! classification result for batch item {i} ({it.title[:60]!r}) missing/null 'relevant' — treating as NOT relevant")
                 if r.get("reason") is None:
                     print(f"  ! classification result for batch item {i} ({it.title[:60]!r}) missing/null 'reason'")
+                relevant = r.get("relevant") if r.get("relevant") is not None else False
+                reason = r.get("reason") if r.get("reason") is not None else ""
+                # Deterministic backstop — product decision 2026-09-16: relevance requires
+                # the literal word "jaunuzņēmums"/"starta uzņēmums"/"startup" somewhere in
+                # the item's own text (title + body), no exceptions for SME scoping, VC
+                # framing, or any other inferred connection. Checked against the full item
+                # text so a real body's wording counts too, not just the title — this
+                # supersedes and subsumes the old no-body-only check (a no-body item's
+                # "text" is just its title anyway, so the outcome there is unchanged).
+                # Applied to every category/source, not just funding items.
+                if relevant and not _has_explicit_startup_signal(it.raw_text):
+                    print(
+                        f"  ! overriding relevant=True to False for {it.title[:60]!r} — "
+                        "item's own text never uses the word jaunuzņēmums/starta uzņēmums/"
+                        "startup (model's claim wasn't grounded in that literal signal)"
+                    )
+                    reason = (
+                        f'[Atcelts — trūkst vārda "jaunuzņēmums"/"starta uzņēmums"/"startup": '
+                        f'"{reason}"]'
+                    )
+                    relevant = False
                 out.append(
                     Classification(
                         item=it,
-                        relevant=r.get("relevant") if r.get("relevant") is not None else False,
+                        relevant=relevant,
                         confidence=r.get("confidence") if r.get("confidence") is not None else 0.5,
-                        reason=r.get("reason") if r.get("reason") is not None else "",
+                        reason=reason,
                         category=r.get("category") if r.get("category") is not None else "other",
+                        deadline=_validate_deadline(r.get("deadline"), it),
                     )
                 )
             return out, unclassified
@@ -362,6 +624,7 @@ def classify_items(items: list[Item]) -> tuple[list[Classification], list[Item]]
                 confidence=0.5,
                 reason=f'"{snippet}" — atrasta atslēgvārda "{kw}" sakarā (bez ANTHROPIC_API_KEY, atslēgvārdu režīms)',
                 category="other",
+                deadline=_extract_deadline_fallback(item.raw_text),
             )
             for item, kw, snippet in candidates
         ], []
@@ -377,4 +640,12 @@ def classify_items(items: list[Item]) -> tuple[list[Classification], list[Item]]
         results.extend(batch_results)
         unclassified.extend(batch_unclassified)
 
-    return [r for r in results if r.relevant], unclassified
+    relevant = [r for r in results if r.relevant]
+    confident_enough = [r for r in relevant if r.confidence >= MIN_CONFIDENCE_TO_INCLUDE]
+    held_back = len(relevant) - len(confident_enough)
+    if held_back:
+        print(
+            f"  ! {held_back} item(s) marked relevant but held back — confidence below "
+            f"{MIN_CONFIDENCE_TO_INCLUDE:.0%} (not shown without a stronger signal)"
+        )
+    return confident_enough, unclassified

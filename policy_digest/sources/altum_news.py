@@ -1,15 +1,17 @@
-"""Altum (altum.lv) news.
+"""Altum (altum.lv) news — via its WordPress REST API.
 
-Altum runs a different CMS (WordPress) than EM/LIAA (Drupal), with its own
-markup, so it gets its own small scraper rather than reusing news_listing.py.
-The listing page (`/par-altum/aktualitates/`) isn't paginated in HTML — it's
-a single page of the ~12 most recent items — which is enough for a weekly
-digest but means a lookback window older than that won't find everything;
-see README.
+The public listing page (`/par-altum/aktualitates/`) is a JS carousel showing only the
+~12 most recent items, with no HTML pagination — capping any lookback window to about a
+month (this was a documented known limitation). altum.lv runs WordPress, though, and its
+default REST API is open with no auth: `/wp-json/wp/v2/posts` returns the exact same
+articles (confirmed by matching titles/URLs against the carousel) with real pagination
+(`page`/`per_page`, up to 100/page) and server-side date filtering (`after`) — so any
+lookback window now actually works, not just the last ~12 items. Bonus: the full article
+body comes back already embedded in `content.rendered`, so unlike every other source
+module here, no second per-article HTTP request is needed at all.
 """
 
-import re
-from datetime import date
+from datetime import date, datetime
 
 import requests
 from bs4 import BeautifulSoup
@@ -17,82 +19,72 @@ from bs4 import BeautifulSoup
 from .base import Item
 
 BASE_URL = "https://www.altum.lv"
-LISTING_URL = f"{BASE_URL}/par-altum/aktualitates/"
+POSTS_API_URL = f"{BASE_URL}/wp-json/wp/v2/posts"
 HEADERS = {"User-Agent": "Mozilla/5.0 (policy-digest prototype; +startin.lv test task)"}
 SOURCE_NAME = "Altum"
-
-# Month abbreviations are always English on this site regardless of server/
-# process locale, so map them explicitly instead of relying on the
-# locale-dependent %b strptime directive.
-_MONTHS = {
-    "Jan": 1, "Feb": 2, "Mar": 3, "Apr": 4, "May": 5, "Jun": 6,
-    "Jul": 7, "Aug": 8, "Sep": 9, "Oct": 10, "Nov": 11, "Dec": 12,
-}
-_DATE_RE = re.compile(r"(\d{1,2})\.\s*([A-Za-z]{3}),\s*(\d{4})")
+PER_PAGE = 100  # WordPress REST API's own maximum
+MAX_PAGES = 20  # safety cap; the loop normally stops once a page is fully older than `since`
 
 
-def _parse_date(text: str) -> date | None:
-    # e.g. "02. Sep, 2026" -> 2026-09-02
-    match = _DATE_RE.search(text.strip())
-    if not match:
-        return None
-    day, month_abbr, year = match.groups()
-    month = _MONTHS.get(month_abbr[:3].title())
-    if month is None:
-        return None
-    try:
-        return date(int(year), month, int(day))
-    except ValueError:
-        return None
-
-
-def _fetch_article_body(url: str) -> str:
-    try:
-        resp = requests.get(url, headers=HEADERS, timeout=30)
-        resp.raise_for_status()
-    except requests.RequestException:
-        return ""
-    soup = BeautifulSoup(resp.text, "html.parser")
-    node = soup.select_one(".newsContent__wrap")
-    return node.get_text(" ", strip=True) if node else ""
+def _strip_html(html_text: str | None) -> str:
+    return BeautifulSoup(html_text or "", "html.parser").get_text(" ", strip=True)
 
 
 def fetch_altum_news(since: date, seen: set[str] | None = None) -> list[Item]:
-    seen = seen or set()
-    resp = requests.get(LISTING_URL, headers=HEADERS, timeout=30)
-    resp.raise_for_status()
-    soup = BeautifulSoup(resp.text, "html.parser")
-
     items: list[Item] = []
-    for block in soup.select(".mainNewsSwiper__content"):
-        date_tag = block.select_one(".mainNewsSwiper__date")
-        link_tag = block.select_one("a.mainNewsSwiper__link")
-        text_tag = block.select_one(".mainNewsSwiperLink__text")
-        if not date_tag or not link_tag:
-            continue
 
-        article_date = _parse_date(date_tag.get_text())
-        if article_date is None:
-            title_preview = (text_tag.get_text(strip=True) if text_tag else link_tag.get_text(strip=True))[:60]
-            print(f"  ! Altum: could not parse article date {date_tag.get_text()!r} for {title_preview!r} — skipped")
-            continue
-        if article_date < since:
-            continue
-
-        title = text_tag.get_text(strip=True) if text_tag else link_tag.get_text(strip=True)
-        href = link_tag["href"]
-        url = href if href.startswith("http") else BASE_URL + href
-        body = "" if url in seen else _fetch_article_body(url)
-
-        items.append(
-            Item(
-                source=SOURCE_NAME,
-                title=title,
-                url=url,
-                date=article_date.isoformat(),
-                summary=body[:200],
-                raw_text=f"{title}\n\n{body}",
+    for page in range(1, MAX_PAGES + 1):
+        try:
+            resp = requests.get(
+                POSTS_API_URL,
+                headers=HEADERS,
+                params={
+                    "per_page": PER_PAGE,
+                    "page": page,
+                    "after": f"{since.isoformat()}T00:00:00",
+                    "orderby": "date",
+                    "order": "desc",
+                },
+                timeout=30,
             )
-        )
+            resp.raise_for_status()
+        except requests.RequestException as exc:
+            print(f"  ! Altum: page {page} request failed ({exc}) — stopping pagination early")
+            break
+
+        posts = resp.json()
+        if not isinstance(posts, list) or not posts:
+            break
+
+        for post in posts:
+            title = _strip_html((post.get("title") or {}).get("rendered", ""))
+            published = post.get("date")  # site-local time, unambiguous enough for a date-only field
+            try:
+                article_date = datetime.fromisoformat(published).date()
+            except (TypeError, ValueError):
+                print(f"  ! Altum: could not parse post date {published!r} for {title[:60]!r} — skipped")
+                continue
+
+            url = post.get("link") or ""
+            body = _strip_html((post.get("content") or {}).get("rendered", ""))
+            items.append(
+                Item(
+                    source=SOURCE_NAME,
+                    title=title,
+                    url=url,
+                    date=article_date.isoformat(),
+                    summary=body[:200],
+                    raw_text=f"{title}\n\n{body}",
+                )
+            )
+
+        total_pages = resp.headers.get("X-WP-TotalPages")
+        if total_pages and page >= int(total_pages):
+            break
+        if page == MAX_PAGES:
+            print(
+                f"  ! Altum: hit the {MAX_PAGES}-page safety cap while still within the "
+                "requested window — some older items may be missing this run"
+            )
 
     return items

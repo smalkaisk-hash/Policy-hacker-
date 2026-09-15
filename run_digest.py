@@ -121,11 +121,13 @@ def main():
             "(API failure) — will be retried next run, not marked as seen."
         )
 
+    all_source_names = [name for name, _ in SOURCES]
+
     OUTPUT_DIR.mkdir(exist_ok=True)
     md_path = OUTPUT_DIR / f"digest_{today.isoformat()}.md"
     html_path = OUTPUT_DIR / f"digest_{today.isoformat()}.html"
-    md_path.write_text(render_markdown(classifications, since, today), encoding="utf-8")
-    html_path.write_text(render_html(classifications, since, today), encoding="utf-8")
+    md_path.write_text(render_markdown(classifications, since, today, all_sources=all_source_names), encoding="utf-8")
+    html_path.write_text(render_html(classifications, since, today, all_sources=all_source_names), encoding="utf-8")
 
     print(f"\nDigest written to:\n  {md_path}\n  {html_path}")
 

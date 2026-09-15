@@ -12,7 +12,7 @@ from bs4 import BeautifulSoup
 from .base import Item
 
 HEADERS = {"User-Agent": "Mozilla/5.0 (policy-digest prototype; +startin.lv test task)"}
-MAX_PAGES = 10  # safety cap; the loop normally stops early once past `since`
+MAX_PAGES = 40  # safety cap; the loop normally stops early once past `since` (see warning below)
 
 
 def _fetch_article_body(url: str) -> str:
@@ -92,5 +92,10 @@ def fetch_news_listing(
 
         if stop_pagination:
             break
+        if page == MAX_PAGES - 1:
+            print(
+                f"  ! {source_name}: hit the {MAX_PAGES}-page safety cap while still within "
+                "the requested window — some older items may be missing this run"
+            )
 
     return items

@@ -47,12 +47,116 @@ def _items():
     ]
 
 
+# At least classify.MIN_SUBSTANTIVE_BODY_LEN (150) chars, AND contains an explicit
+# startup-word signal — these malformed-response/retry/confidence tests are about
+# response-parsing and confidence filtering, not about the separate deterministic
+# startup-word gate (see StartupWordGateTests below), so a body missing either property
+# here would trip an unrelated override and make relevant=True results fail for the
+# wrong reason.
+_SUBSTANTIVE_BODY = (
+    "Item 0\n\nThis is a sufficiently long article body describing a real government "
+    "decision to fund jaunuzņēmumi in enough detail that it clears the no-substantive-"
+    "body threshold used elsewhere in classify.py, so these tests exercise only what "
+    "they intend to."
+)
+
+
 class FakeAnthropicRaises:
     """Simulates a transient API failure (rate limit, timeout, overload, ...)."""
 
     def __init__(self, api_key=None):
         self.messages = MagicMock()
         self.messages.create.side_effect = RuntimeError("simulated API outage")
+
+
+class FakeAnthropicWithFixedResults:
+    """Returns a fixed tool-use response for whatever batch it's asked to classify —
+    used to test classify_items()'s confidence-based filtering without hitting the real
+    API. Assumes a single batch (len(items) <= classify.BATCH_SIZE)."""
+
+    def __init__(self, results_by_index):
+        self._results_by_index = results_by_index
+        self.messages = MagicMock()
+        self.messages.create.side_effect = self._create
+
+    def _create(self, **kwargs):
+        block = MagicMock()
+        block.type = "tool_use"
+        block.input = {"results": self._results_by_index}
+        message = MagicMock()
+        message.content = [block]
+        message.stop_reason = "tool_use"
+        return message
+
+
+def _confidence_test_items():
+    return [
+        Item(source="A", title="Confident item", url="http://a/1", date="2026-09-10",
+             raw_text="Confident item\n\n" + _SUBSTANTIVE_BODY),
+        Item(source="B", title="Shaky item", url="http://b/2", date="2026-09-10",
+             raw_text="Shaky item\n\n" + _SUBSTANTIVE_BODY),
+    ]
+
+
+class ConfidenceFilterTests(unittest.TestCase):
+    """Caught in production 2026-09-15: tightening SYSTEM_PROMPT reduced but didn't
+    eliminate the hedge-word/category-truism failure — the model sometimes still says
+    relevant=True with weak, hedge-qualified reasoning (confirmed: confidence 0.60-0.75
+    on those cases vs. 0.92-0.98 on solid ones). Per product direction, those items must
+    not reach the digest at all — held back entirely, not shown with a caveat — so
+    classify_items() enforces MIN_CONFIDENCE_TO_INCLUDE as a hard filter, not just a
+    display hint."""
+
+    def _run(self, results_by_index):
+        with patch.dict("os.environ", {"ANTHROPIC_API_KEY": "fake-key"}):
+            with patch("anthropic.Anthropic", lambda api_key: FakeAnthropicWithFixedResults(results_by_index)):
+                return classify.classify_items(_confidence_test_items())
+
+    def test_high_confidence_relevant_item_is_included(self):
+        out, _ = self._run([
+            {"index": 0, "relevant": True, "confidence": 0.95, "category": "funding", "reason": "Solid."},
+            {"index": 1, "relevant": False, "confidence": 0.95, "category": "other", "reason": "No."},
+        ])
+        self.assertEqual([c.item.url for c in out], ["http://a/1"])
+
+    def test_low_confidence_relevant_item_is_held_back(self):
+        out, unclassified = self._run([
+            {"index": 0, "relevant": True, "confidence": 0.6, "category": "funding", "reason": "Reaching."},
+            {"index": 1, "relevant": False, "confidence": 0.95, "category": "other", "reason": "No."},
+        ])
+        self.assertEqual(out, [])
+        # Held back, not "unclassified" — it WAS classified, just not confident enough
+        # to show; must not be retried next run as if it never got a verdict.
+        self.assertEqual(unclassified, [])
+
+    def test_confidence_exactly_at_threshold_is_included(self):
+        out, _ = self._run([
+            {"index": 0, "relevant": True, "confidence": classify.MIN_CONFIDENCE_TO_INCLUDE,
+             "category": "funding", "reason": "Right at the line."},
+            {"index": 1, "relevant": False, "confidence": 0.95, "category": "other", "reason": "No."},
+        ])
+        self.assertEqual([c.item.url for c in out], ["http://a/1"])
+
+    def test_low_confidence_not_relevant_item_stays_excluded_for_its_own_reason(self):
+        # A NOT-relevant item's confidence doesn't matter — it's excluded either way, and
+        # must not somehow end up included by a confidence-filter bug.
+        out, _ = self._run([
+            {"index": 0, "relevant": False, "confidence": 0.4, "category": "other", "reason": "Not it."},
+            {"index": 1, "relevant": False, "confidence": 0.95, "category": "other", "reason": "No."},
+        ])
+        self.assertEqual(out, [])
+
+    def test_keyword_fallback_path_is_unaffected_by_confidence_filter(self):
+        # No API key -> keyword fallback path, whose confidence=0.5 is a flat
+        # placeholder, not a calibrated score. MIN_CONFIDENCE_TO_INCLUDE (0.75) must only
+        # gate the real LLM path — applying it here would silently disable the entire
+        # no-key fallback mode (every match would be < 0.75 and vanish).
+        with patch.dict("os.environ", {"ANTHROPIC_API_KEY": ""}):
+            out, unclassified = classify.classify_items(_items())
+        self.assertEqual(len(out), 1)
+        self.assertEqual(out[0].item.title, "Test 1")
+        self.assertEqual(out[0].confidence, 0.5)
+        self.assertEqual(unclassified, [])
 
 
 class ClassifyApiFailureTests(unittest.TestCase):
@@ -126,12 +230,13 @@ class MkMeetingsDateParsingTests(unittest.TestCase):
         self.assertIsNone(_parse_meeting_date("not a date"))
 
 
-def _mock_batch_response(input_dict, block_type="tool_use"):
+def _mock_batch_response(input_dict, block_type="tool_use", stop_reason="end_turn"):
     block = MagicMock()
     block.type = block_type
     block.input = input_dict
     message = MagicMock()
     message.content = [block]
+    message.stop_reason = stop_reason
     return message
 
 
@@ -141,11 +246,11 @@ class ClassifyMalformedResponseTests(unittest.TestCase):
     "index" as a numeric string). A single malformed batch response must not crash the
     whole run, the way an outright API failure must not either."""
 
-    def _run(self, input_dict, block_type="tool_use"):
+    def _run(self, input_dict, block_type="tool_use", stop_reason="end_turn"):
         client = MagicMock()
-        client.messages.create.return_value = _mock_batch_response(input_dict, block_type)
+        client.messages.create.return_value = _mock_batch_response(input_dict, block_type, stop_reason)
         batch = [Item(source="A", title="Item 0", url="http://a/0", date="2026-09-10",
-                       raw_text="Item 0\n\nSome long enough body text for a real item.")]
+                       raw_text=_SUBSTANTIVE_BODY)]
         return classify._classify_batch_with_llm(client, batch)
 
     def test_results_explicitly_null_does_not_crash(self):
@@ -191,6 +296,184 @@ class ClassifyMalformedResponseTests(unittest.TestCase):
         self.assertEqual((c.relevant, c.confidence, c.reason, c.category), (False, 0.5, "", "other"))
         # Must render without crashing too (defense in depth at the render layer itself).
         render_markdown(out, date(2026, 9, 7), date(2026, 9, 14))
+
+    def test_results_as_double_encoded_json_string_is_recovered(self):
+        # Seen in practice on a real 10-item batch of long Saeima committee agenda items:
+        # the model wrapped its own valid JSON array in quotes, returning "results" as a
+        # string instead of a native array. Without recovery, enumerate() iterates the
+        # string character-by-character — thousands of spurious "not an object" warnings
+        # and the whole batch wrongly treated as unclassified even though the model's
+        # answer was actually fine.
+        payload = json.dumps([
+            {"index": 0, "relevant": True, "confidence": 0.82, "reason": "ok", "category": "other"}
+        ])
+        out, unclassified = self._run({"results": payload})
+        self.assertEqual(len(out), 1)
+        self.assertEqual(out[0].relevant, True)
+        self.assertEqual(unclassified, [])
+
+    def test_results_as_unparseable_string_does_not_crash(self):
+        out, unclassified = self._run({"results": "not valid json at all {["})
+        self.assertEqual(out, [])
+        self.assertEqual([it.url for it in unclassified], ["http://a/0"])
+
+    def test_results_as_json_string_decoding_to_non_list_does_not_crash(self):
+        # Valid JSON, but not an array (e.g. a bare object) — must not be treated as a
+        # one-item-per-character iterable either.
+        out, unclassified = self._run({"results": json.dumps({"not": "a list"})})
+        self.assertEqual(out, [])
+        self.assertEqual([it.url for it in unclassified], ["http://a/0"])
+
+    def test_max_tokens_truncated_batch_does_not_crash(self):
+        # A batch whose output was cut off mid-JSON by the max_tokens limit — the
+        # incomplete "results" string won't parse as JSON at all (unlike the
+        # double-encoded-but-complete case above). Must degrade to "unclassified",
+        # not crash, regardless of whether the truncation is correctly diagnosed.
+        incomplete = '[{"index": 0, "relevant": true, "confidence": 0.9, "reason": "cut off mid-s'
+        out, unclassified = self._run({"results": incomplete}, stop_reason="max_tokens")
+        self.assertEqual(out, [])
+        self.assertEqual([it.url for it in unclassified], ["http://a/0"])
+
+    def test_unusable_results_batch_is_recovered_on_automatic_retry(self):
+        # The actual intended behavior, not just graceful failure: an unusable first
+        # response (results double-encoded as an unparseable string — the real failure
+        # mode hit on production data) followed by a good second response must recover
+        # the whole batch, not just avoid crashing on the first attempt.
+        client = MagicMock()
+        client.messages.create.side_effect = [
+            _mock_batch_response({"results": "not valid json {["}),
+            _mock_batch_response({"results": [
+                {"index": 0, "relevant": True, "confidence": 0.9, "reason": "ok", "category": "funding"}
+            ]}),
+        ]
+        batch = [Item(source="A", title="Item 0", url="http://a/0", date="2026-09-10",
+                       raw_text=_SUBSTANTIVE_BODY)]
+        out, unclassified = classify._classify_batch_with_llm(client, batch)
+        self.assertEqual(len(out), 1)
+        self.assertEqual(out[0].relevant, True)
+        self.assertEqual(unclassified, [])
+        self.assertEqual(client.messages.create.call_count, 2)
+
+    def test_retry_happens_at_most_once(self):
+        # Two bad responses in a row must not trigger a third call — the retry is bounded
+        # to exactly one extra attempt, never an unbounded loop.
+        client = MagicMock()
+        client.messages.create.return_value = _mock_batch_response({"results": "still not json {["})
+        batch = [Item(source="A", title="Item 0", url="http://a/0", date="2026-09-10",
+                       raw_text=_SUBSTANTIVE_BODY)]
+        out, unclassified = classify._classify_batch_with_llm(client, batch)
+        self.assertEqual(out, [])
+        self.assertEqual([it.url for it in unclassified], ["http://a/0"])
+        self.assertEqual(client.messages.create.call_count, 2)
+
+
+class StartupWordGateTests(unittest.TestCase):
+    """Two overlapping product decisions enforced deterministically in classify.py:
+
+    1. Caught in production 2026-09-15: real MK protocol items with no substantive body
+       text (hit classify.NO_BODY_MARKER) still came back relevant=True, with the model
+       inventing eligibility from its own background knowledge of a named program rather
+       than anything in the text it was shown.
+    2. Product decision 2026-09-16 (see CLAUDE.md and
+       memory/project_policy_hacker_startup_word_gate.md): relevance requires the literal
+       word jaunuzņēmums/starta uzņēmums/startup somewhere in the item's OWN full text —
+       no SME/MVU carve-out, no VC/risk-capital carve-out, and it applies to every item
+       regardless of category/source or whether it has a substantive body, not just the
+       no-body case. classify._has_explicit_startup_signal is the single check behind
+       both: it's just checked against the title alone for a no-body item (since that's
+       all the text there is) and against the full raw_text otherwise."""
+
+    def _run_with_item(self, item, input_dict):
+        client = MagicMock()
+        client.messages.create.return_value = _mock_batch_response(input_dict)
+        return classify._classify_batch_with_llm(client, [item])
+
+    def test_no_body_item_with_generic_title_is_overridden_to_not_relevant(self):
+        # "jaunu produktu" (new PRODUCTS) — no startup-word signal at all.
+        item = Item(source="MK", title='Grozījumi noteikumos Nr. 501 "Atbalsts jaunu produktu attīstībai"',
+                    url="http://mk/1", date="2026-09-08",
+                    raw_text='Grozījumi noteikumos Nr. 501 "Atbalsts jaunu produktu attīstībai"')
+        out, _ = self._run_with_item(item, {"results": [
+            {"index": 0, "relevant": True, "confidence": 0.8, "category": "funding",
+             "reason": "Šī skaidri ietver jaunuzņēmumu atbalstu."}
+        ]})
+        self.assertEqual(len(out), 1)
+        self.assertFalse(out[0].relevant)
+        self.assertIn("Atcelts", out[0].reason)
+
+    def test_no_body_item_with_explicit_title_is_not_overridden(self):
+        item = Item(source="MK", title="Atbalsts jaunuzņēmumiem: grozījumi programmas noteikumos",
+                    url="http://mk/2", date="2026-09-08",
+                    raw_text="Atbalsts jaunuzņēmumiem: grozījumi programmas noteikumos")
+        out, _ = self._run_with_item(item, {"results": [
+            {"index": 0, "relevant": True, "confidence": 0.8, "category": "funding",
+             "reason": "Nosaukums tieši nosauc jaunuzņēmumus."}
+        ]})
+        self.assertEqual(len(out), 1)
+        self.assertTrue(out[0].relevant)
+        self.assertNotIn("Atcelts", out[0].reason)
+
+    def test_no_body_item_naming_venture_capital_without_the_word_is_now_overridden(self):
+        # Superseded 2026-09-16: a venture-capital-named program used to pass on the VC
+        # label alone (no jaunuzņēmumi/MVU wording needed) — that carve-out was
+        # explicitly removed. "Iespējkapitāla ieguldījumi" never says the literal word,
+        # so this must now be rejected just like any other unproven claim.
+        item = Item(source="MK", title='Grozījumi noteikumos Nr. 463 "Iespējkapitāla ieguldījumi"',
+                    url="http://mk/5", date="2026-09-08",
+                    raw_text='Grozījumi noteikumos Nr. 463 "Iespējkapitāla ieguldījumi"')
+        out, _ = self._run_with_item(item, {"results": [
+            {"index": 0, "relevant": True, "confidence": 0.8, "category": "funding",
+             "reason": "Šī ir riska kapitāla programma."}
+        ]})
+        self.assertEqual(len(out), 1)
+        self.assertFalse(out[0].relevant)
+        self.assertIn("Atcelts", out[0].reason)
+
+    def test_item_with_substantive_body_containing_the_word_is_not_overridden(self):
+        item = Item(source="MK", title="Grozījumi noteikumos Nr. 999",
+                    url="http://mk/3", date="2026-09-08",
+                    raw_text=_SUBSTANTIVE_BODY)  # contains "jaunuzņēmumi"
+        out, _ = self._run_with_item(item, {"results": [
+            {"index": 0, "relevant": True, "confidence": 0.8, "category": "funding",
+             "reason": "Pamatots ar pilnu teksta saturu."}
+        ]})
+        self.assertEqual(len(out), 1)
+        self.assertTrue(out[0].relevant)
+        self.assertNotIn("Atcelts", out[0].reason)
+
+    def test_item_with_substantive_body_but_no_startup_word_is_overridden(self):
+        # New 2026-09-16 behavior: unlike the old no-body-only check, a real, detailed
+        # body no longer exempts an item from the word requirement — e.g. an ALTUM loan
+        # to a named company with plenty of body text but never the word "jaunuzņēmums".
+        item = Item(
+            source="Altum", title="ALTUM piešķir aizdevumu uzņēmumam saules parka būvniecībai",
+            url="http://altum/1", date="2026-09-08",
+            raw_text=(
+                "ALTUM piešķir aizdevumu uzņēmumam saules parka būvniecībai\n\n"
+                "ALTUM piešķīrusi aizdevumu 1,2 miljonu eiro apmērā uzņēmumam jaunas "
+                "saules elektrostacijas būvniecībai. Aizdevums pieejams jebkuram "
+                "Latvijas energoražotājam neatkarīgi no uzņēmuma lieluma vai darbības "
+                "ilguma, un projekts palielinās uzņēmuma jaudu par 40%."
+            ),
+        )
+        out, _ = self._run_with_item(item, {"results": [
+            {"index": 0, "relevant": True, "confidence": 0.8, "category": "funding",
+             "reason": "Šis ir finansējums uzņēmumam."}
+        ]})
+        self.assertEqual(len(out), 1)
+        self.assertFalse(out[0].relevant)
+        self.assertIn("Atcelts", out[0].reason)
+
+    def test_no_body_item_already_marked_not_relevant_is_unaffected(self):
+        item = Item(source="MK", title="Grozījumi noteikumos Nr. 111",
+                    url="http://mk/4", date="2026-09-08", raw_text="Grozījumi noteikumos Nr. 111")
+        out, _ = self._run_with_item(item, {"results": [
+            {"index": 0, "relevant": False, "confidence": 0.8, "category": "other",
+             "reason": "Nosaukums nenorāda uz jaunuzņēmumiem."}
+        ]})
+        self.assertEqual(len(out), 1)
+        self.assertFalse(out[0].relevant)
+        self.assertNotIn("Atcelts", out[0].reason)  # nothing to override, verdict was already correct
 
 
 class RenderMarkdownWhitespaceTests(unittest.TestCase):

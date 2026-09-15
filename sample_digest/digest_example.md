@@ -1,60 +1,59 @@
 ![startin.lv](../assets/logobig.png)
 
 # Politikas monitorings
-#### 2026-09-07 – 2026-09-14
+#### 2026-08-16 – 2026-09-15
 
 > Jaunuzņēmumiem atbilstošs ir ieraksts, kas pēc būtības ietekmē jaunuzņēmumu darbību, finansējumu vai izaugsmes vidi — piemēram, jauns atbalsts vai finansējuma iespēja, izmaiņas nodokļu vai darba tiesību regulējumā, vai iniciatīva inovāciju un digitalizācijas jomā. Katru ierakstu izvērtē mākslīgais intelekts, izlasot tā pilno saturu, nevis meklējot atsevišķus atslēgvārdus.
 
-**17 atbilstoši ieraksti no 6 avotiem.**
+**14 atbilstoši ieraksti no 5 avotiem.**
+*Pārbaudītie avoti: TAP portāls (1), Valsts sekretāru sanāksme (0), Ministru kabineta protokoli (3), Ekonomikas ministrija (2), LIAA (5), Altum (0), Saeimas komisiju darba kārtības (3)*
 
-## Altum (1)
+## Finansējuma iespējas (10)
 
-- **[ALTUM piešķir 842 tūkstošus eiro Latvijas uzņēmumam “FORTES” enerģētikas infrastruktūras atjaunošanai Ukrainā](https://www.altum.lv/altum-pieskir-842-tukstosus-eiro-latvijas-uznemumam-fortes-energetikas-infrastrukturas-atjaunosanai-ukraina/)** — 2026-09-14 · `Finansējums`
-  > ALTUM piešķir aizdevumus Latvijas uzņēmumiem Ukrainas eksportam ar atviglotiem nodrošinājuma nosacījumiem – tieši SME atbalsta programma.
+### Ekonomikas ministrija (1)
 
-## Ekonomikas ministrija + LIAA (3)
+- **[Valdība novirza papildu finansējumu divējāda lietojuma tehnoloģiju attīstībai](https://www.em.gov.lv/lv/jaunums/valdiba-novirza-papildu-finansejumu-divejada-lietojuma-tehnologiju-attistibai)** — 2026-08-19 · `Finansējums`
+  > Valdība novirza papildu finansējumu 106 035 eiro divējāda lietojuma tehnoloģiju attīstībai, lai atbalstītu 19 atlasītus augstas gatavības projektus; tā ir jaunuzņēmumiem/SME-iem orientēta R&D finansējuma programma ar konkrētu finansējuma apmēru un projektu atlases mehānismu.
 
-- **[“NestAI” paplašina darbību Latvijā, lai attīstītu aizsardzības mākslīgo intelektu NATO austrumu flangā](https://www.liaa.gov.lv/lv/jaunums/nestai-paplasina-darbibu-latvija-lai-attistitu-aizsardzibas-maksligo-intelektu-nato-austrumu-flanga)** — 2026-09-11 · `Digitalizācija un inovācijas`
-  > NestAI R&D centra izveide Latvijā ar 10 miljonu eiro investīciju un LIAA atbalstu attīsta augsttehnolģiju ekosistēmu un inovācijas.
-- **[Latvijas uzņēmēji Valsts prezidenta vizītes laikā dosies tirdzniecības misijā uz ASV](https://www.em.gov.lv/lv/jaunums/latvijas-uznemeji-valsts-prezidenta-vizites-laika-dosies-tirdzniecibas-misija-uz-asv)** — 2026-09-10 · `Finansējums`
-  > LIAA organizē tirdzniecības misiju uz ASV, kurā ietverti jaunuzņēmumi un tehnoloģiju nozares uzņēmumi, lai veicinātu eksportu un investīcijas.
-- **[Latvijas uzņēmēji Berlīnē stiprinās sadarbību ar Vācijas tehnoloģiju un rūpniecības līderiem](https://www.em.gov.lv/lv/jaunums/latvijas-uznemeji-berline-stiprinas-sadarbibu-ar-vacijas-tehnologiju-un-rupniecibas-lideriem)** — 2026-09-07 · `Finansējums`
-  > LIAA organizēta tirdzniecības misija Berlīnē IT, FinTech, dzīvības zinātņu jaunuzņēmumiem - tiešs jaunuzņēmumu eksporta atbalsts un sadarbības veicināšana.
+### LIAA (5)
 
-## LIAA (4)
-
+- **[Atklāta pieteikšanās “Venture Catalysts” 6. un noslēdzošajam cēlienam: iespēja attīstīt zinātnē balstītas inovācijas un deep tech uzņēmējdarbību](https://www.liaa.gov.lv/lv/jaunums/atklata-pieteiksanas-venture-catalysts-6-un-nosledzosajam-celienam-iespeja-attistit-zinatne-balstitas-inovacijas-un-deep-tech-uznemejdarbibu)** — 2026-09-01 · Termiņš: 04.10.2026 · `Finansējums`
+  > Programma adresē zinātnē balstītu jaunu uzņēmumu veidošanos un deep tech jaunuzņēmumu attīstību, ar iesniegšanas termiņu 2026. gada 4. oktobrim.
 - **[Norvēģijas finanšu instrumenta 2021.-2028. gada plānošanas periods](https://www.liaa.gov.lv/lv/jaunums/norvegijas-finansu-instrumenta-2021-2028-gada-planosanas-periods)** — 2026-09-11 · `Finansējums`
-  > Norvēģijas finanšu instrumenta 2021.–2028. programma atbalsta jaunuzņēmumus, sievietēm uzņēmējām un zaļo inovāciju projektus ar 27.5 miljonu eiro.
+  > Programma "Zaļā uzņēmējdarbība un inovācijas" Norvēģijas finanšu instrumenta ietvaros tieši nosaka atbalstu "jaunuzņēmumiem", kā arī sievietēm uzņēmējām, ar finansējuma pieejamību no 35% līdz 80% un tieši paredzētiem līdzekļiem inovatīvu zaļo un digitālo produktu izstrādei.
 - **[LIAA piedāvā rīku, kas palīdz uzņēmējiem atrast piemērotāko atbalstu](https://www.liaa.gov.lv/lv/jaunums/liaa-piedava-riku-kas-palidz-uznemejiem-atrast-piemerotako-atbalstu)** — 2026-09-10 · `Finansējums`
-  > LIAA piedāvā digitālu "Latvijas biznesa atbalsta vedni", kas apkopo LIAA, Altum, CFLA un citu institūciju atbalsta programmas jaunuzņēmumiem un SME.
+  > LIAA piedāvā digitālu rīku "Latvijas biznesa atbalsta vedni", kas palīdz uzņēmējiem atrast pieejamos atbalsta instrumentus – tas ir finansējuma atklāšanas rīks, kas funkcijas ziņā ir paredzēts jaunuzņēmumiem un dažādu attīstības posmu uzņēmumiem.
 - **[No prototipa līdz eksporta tirgum: LIAA atver rudens uzņemšanu Biznesa inkubācijas programmā](https://www.liaa.gov.lv/lv/jaunums/no-prototipa-lidz-eksporta-tirgum-liaa-atver-rudens-uznemsanu-biznesa-inkubacijas-programma)** — 2026-09-09 · `Finansējums`
-  > LIAA Biznesa inkubācijas programma piedāvā jaunuzņēmumiem grantu finansējumu (līdz 70%), ekspertu konsultācijas un mentoringa pakalpojumus ar skaidri noteiktiem nosacījumiem un apmēriem.
-- **[Sākusies pieteikšanās “Jauno uzņēmēju skolā 2026” piecās Latvijas pilsētās](https://www.liaa.gov.lv/lv/jaunums/sakusies-pieteiksanas-jauno-uznemeju-skola-2026-piecas-latvijas-pilsetas)** — 2026-09-07 · `Finansējums`
-  > LIAA organizē reģionālo semināru ciklu jaunuzņēmumu ideju ģenerēšanai un SMU attīstībai, ko līdzfinansē ERAF fonds – konkrēts atbalsts jaunuzņēmumu ekosistēmai.
+  > LIAA Biznesa inkubācijas programma tieši paredzēta Latvijā reģistrētiem "mikro, mazajiem un vidējiem uzņēmumiem, kuri nav vecāki par pieciem gadiem", ar finanšu atbalstu līdz 70% un konkrētu pieteikšanās termiņu 24. septembrim.
+- **[Pieteikumu limits LIAA Mini MBA programmai sasniegts 28 minūtēs](https://www.liaa.gov.lv/lv/jaunums/pieteikumu-limits-liaa-mini-mba-programmai-sasniegts-28-minutes)** — 2026-08-24 · `Finansējums`
+  > LIAA Mini MBA programma 'Inovāciju vadība' – apmācības programma mazo un vidējo uzņēmumu vadītājiem ar eksplicītu MVU/SME nosacījumu ('Latvijas mazo un vidējo uzņēmumu vidējā un augstākā līmeņa vadītājiem'); programma sniedzas tikai uz MVU.
 
-## Ministru kabineta protokoli (2)
+### Ministru kabineta protokoli (3)
 
-- **[Noteikumu projekts "Grozījumi Ministru kabineta 2023. gada 15. augusta noteikumos Nr. 463 "Programmas "Iespējkapitāla ieguldījumi" īstenošanas noteikumi""](https://tapportals.mk.gov.lv/meetings/protocols/c4f5b0fb-b24b-42bc-a36b-701cef63e393#meeting-protocol-preview-7)** — 2026-09-08 · `Finansējums`
-  > Grozījumi programmas "Iespējkapitāla ieguldījumi" īstenošanas noteikumos, kas tieši attiecas uz ieguldījumiem jaunuzņēmumos.
-- **[Latvijas Republikas nacionālā pozīcija Nr. 1 "Par priekšlikumu Padomes lēmumam par Nolīguma par elektronisko komerciju noslēgšanu"](https://tapportals.mk.gov.lv/meetings/protocols/c4f5b0fb-b24b-42bc-a36b-701cef63e393#meeting-protocol-preview-50)** — 2026-09-08 · `Regulējums`
-  > ES Nolīgums par elektronisko komerciju potenciāli skar jaunuzņēmumu darbību digitālo pakalpojumu tirgū, lai gan konkrēts regulējums nav redzams.
+- **[Noteikumu projekts "Grozījumi Ministru kabineta 2023. gada 15. augusta noteikumos Nr. 463 "Programmas "Iespējkapitāla ieguldījumi" īstenošanas noteikumi""](https://tapportals.mk.gov.lv/meetings/protocols/c4f5b0fb-b24b-42bc-a36b-701cef63e393#meeting-protocol-preview-7)** — 2026-09-08 · `Finansējums`
+  > Teksts skar programmu «Iespējkapitāla ieguldījumi» ar riska kapitāla mehānismu, kas pēc definīcijas ir orientēts uz agrīnās stadijas un augsta izaugsmes potenciāla jaunuzņēmumiem.
+- **[Noteikumu projekts "Grozījumi Ministru kabineta 2024. gada 3. decembra noteikumos Nr. 775 "Eiropas Savienības kohēzijas politikas programmas 2021.–2027. gadam 1.2.1. specifiskā atbalsta mērķa "Pētniecības un inovāciju kapacitātes stiprināšana un progresīvu tehnoloģiju ieviešana uzņēmumiem" 1.2.1.1. pasākuma "Atbalsts jaunu produktu attīstībai un internacionalizācijai" otrās kārtas īstenošanas noteikumi""](https://tapportals.mk.gov.lv/meetings/protocols/c5f58424-0601-42d4-ab0b-4089547b5de1#meeting-protocol-preview-13)** — 2026-09-01 · `Finansējums`
+  > Atbalsts jaunu produktu attīstībai un internacionalizācijai EU kohēzijas programmas ietvaros — produktu izstrādes un internacionalizācijas atbalsts uzņēmumiem, kur inovācija ir mērķis.
+- **[Noteikumu projekts "Grozījumi Ministru kabineta 2024. gada 22. oktobra noteikumos Nr. 663 "Eiropas Savienības kohēzijas politikas programmas 2021.–2027. gadam 1.2.1. specifiskā atbalsta mērķa "Pētniecības un inovāciju kapacitātes stiprināšana un progresīvu tehnoloģiju ieviešana uzņēmumiem" 1.2.1.1. pasākuma "Atbalsts jaunu produktu attīstībai un internacionalizācijai" trešās kārtas īstenošanas noteikumi""](https://tapportals.mk.gov.lv/meetings/protocols/6673d086-ca10-48c1-9604-5ea07bb4acc4#meeting-protocol-preview-3)** — 2026-08-18 · `Finansējums`
+  > Grozījumi ES kohēzijas politikas programmas 1.2.1.1. pasākumam "Atbalsts jaunu produktu attīstībai un internacionalizācijai" regulē jaunu produktu attīstības atbalstu uzņēmumiem ar inovāciju fokusa, kas ir relevants augstiem augšanas potenciālam uzņēmumiem.
 
-## Saeimas komisiju darba kārtības (6)
+### TAP portāls (1)
 
-- **[Eiropas lietu komisijas sēde](https://titania.saeima.lv/livs/saeimasnotikumi.nsf/0/3F342B11D6A3414AC2258E67002BABD6?OpenDocument)** — 2026-09-11 · `Regulējums`
-  > Digitālais omnibuss groza ES regulācijas par GDPR, digitālajiem pakalpojumiem un datu vietu – būtiskas izmaiņas tech startup regulatorajam videi.
-- **[Eiropas lietu komisijas sēde](https://titania.saeima.lv/livs/saeimasnotikumi.nsf/0/A3E83A983EEA92CAC2258E5F002D2CC8?OpenDocument)** — 2026-09-09 · `Regulējums`
-  > Eiropas Parlamenta "Digitālā omnibusa" regula vienkāršos digitālā pakalpojumu regulējumu un ietekmēs tehnoloģiju uzņēmumu darbības nosacījumus Latvijā.
-- **[Budžeta un finanšu (nodokļu) komisijas sēde](https://titania.saeima.lv/livs/saeimasnotikumi.nsf/0/6F7C1AA20FEA7CBCC2258E6600492A62?OpenDocument)** — 2026-09-09 · `Regulējums`
-  > Grozījumi Kolektīvās finansēšanas pakalpojumu likumā var ietekmēt alternatīvo finansējuma iespējas (crowdfunding) jaunuzņēmumiem.
+- **[Grozījumi Ministru kabineta 2024. gada 3. decembra noteikumos Nr. 775 "Eiropas Savienības kohēzijas politikas programmas 2021.–2027. gadam 1.2.1. specifiskā atbalsta mērķa "Pētniecības un inovāciju kapacitātes stiprināšana un progresīvu tehnoloģiju ieviešana uzņēmumiem" 1.2.1.1. pasākuma "Atbalsts jaunu produktu attīstībai un internacionalizācijai" otrās kārtas īstenošanas noteikumi"](https://tapportals.mk.gov.lv/legal_acts/fc909198-2eac-4c92-b18b-783e48cc059e)** — 2026-08-28 · `Finansējums`
+  > ES kohēzijas politikas programmas pasākums "Atbalsts jaunu produktu attīstībai un internacionalizācijai" tieši adresē sadarbības tīklu dalībniekiem, tostarp MVU, ar finansējuma nodrošināšanu, kas ir jaunuzņēmumiem attiecināms atbalsts.
+
+## Regulējums un iniciatīvas (4)
+
+### Ekonomikas ministrija (1)
+
+- **[Valainis ar piecu ES valstu kolēģiem pārrunā Digitālā omnibusa ietekmi uz uzņēmējdarbību](https://www.em.gov.lv/lv/jaunums/valainis-ar-piecu-es-valstu-kolegiem-parruna-digitala-omnibusa-ietekmi-uz-uznemejdarbibu)** — 2026-09-03 · `Regulējums`
+  > Ministra diskusija par Digitālā omnibusa ietekmi uz uzņēmējdarbību, īpaši mazo un vidējo uzņēmumu un jaunuzņēmumu skaitlī, un viņu saskarsmē ar administratīvo slogu digitālajā regulējumā.
+
+### Saeimas komisiju darba kārtības (3)
+
 - **[Budžeta un finanšu (nodokļu) komisijas sēde](https://titania.saeima.lv/livs/saeimasnotikumi.nsf/0/ECC79249FC0FABA7C2258E66004945CA?OpenDocument)** — 2026-09-08 · `Nodokļi un darbs`
-  > Likumprojekts par mikrouzņēmumu nodokļa un PVN izmaiņām, kā arī kolektīvās finansēšanas likuma grozījumi tieši skar startupus un MVU.
-- **[Tautsaimniecības, agrārās, vides un reģionālās politikas komisijas sēde](https://titania.saeima.lv/livs/saeimasnotikumi.nsf/0/801DFEB953442F6EC2258E67004B7810?OpenDocument)** — 2026-09-08 · `Regulējums`
-  > Likumprojekti par elektronisko sakaru likumu, informācijas sabiedrības pakalpojumiem un kibernoziegumiem ietekmē digitālo pakalpojumu un IT jaunuzņēmumus.
-- **[Cilvēktiesību un sabiedrisko lietu komisijas Latgales apakškomisijas sēde](https://titania.saeima.lv/livs/saeimasnotikumi.nsf/0/D4797C3D060E3035C2258E5E00302462?OpenDocument)** — 2026-09-08 · `Finansējums`
-  > Uzņēmējdarbības atbalsta pasākumi pašvaldībām ar sasniedzamo rādītāju analīzi, ieskaitant CFLA un LIAA lomu - tieši attiecas uz jaunuzņēmumu atbalsta programmām.
-
-## Valsts sekretāru sanāksme (1)
-
-- **[Informatīvais ziņojums "Par administratīvā sloga mazināšanas mērķi un pasākumiem"](https://tapportals.mk.gov.lv/meetings/protocols/b29f4006-f11f-4855-b942-7befe4211e09#meeting-protocol-preview-2)** — 2026-09-10 · `Regulējums`
-  > Administratīvā sloga mazināšanas rīcības grupa izskata pasākumus birokrātijas samazināšanai, kas var attīstīt jaunuzņēmumiem nozīmīgu vienkāršošanu reģistrācijas un pārskaitēs.
+  > Likumprojekts attiecas uz Mikrouzņēmumu nodokļa likuma grozījumiem, kas ir tiešs nodokļu regulējums, kas skar jaunuzņēmumus ar mikropodstatu.
+- **[Budžeta un finanšu (nodokļu) komisijas sēde](https://titania.saeima.lv/livs/saeimasnotikumi.nsf/0/3304F94E051AD6B1C2258E600035EDD5?OpenDocument)** — 2026-09-02 · `Nodokļi un darbs`
+  > Likumprojekts "Grozījumi Mikrouzņēmumu nodokļa likumā" (Nr.1407/Lp14) tiešā veidā skar MVU nodokļu režīmu, kas ir jaunuzņēmumiem un mazajiem uzņēmumiem specifisks regulējums.
+- **[Tautsaimniecības, agrārās, vides un reģionālās politikas komisijas sēde](https://titania.saeima.lv/livs/saeimasnotikumi.nsf/0/8144168A50C2C80EC2258E60003A6F12?OpenDocument)** — 2026-09-02 · `Regulējums`
+  > Likumprojekta pakete ietver grozījumus Elektronisko sakaru likumā (Nr.1477/Lp14) un Informācijas sabiedrības pakalpojumu likumā (Nr.1478/Lp14), kas skar digitālo pakalpojumu regulējumu un varētu ietekmēt tech jaunuzņēmumus.

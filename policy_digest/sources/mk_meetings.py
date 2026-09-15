@@ -16,7 +16,7 @@ from .base import Item
 
 BASE_URL = "https://tapportals.mk.gov.lv"
 HEADERS = {"User-Agent": "Mozilla/5.0 (policy-digest prototype; +startin.lv test task)"}
-MAX_PAGES = 10  # safety cap; the loop normally stops early once past `since`
+MAX_PAGES = 30  # safety cap; the loop normally stops early once past `since` (see warning below)
 
 
 def _parse_meeting_date(text: str) -> date | None:
@@ -146,5 +146,10 @@ def fetch_mk_meetings(
 
         if stop_pagination:
             break
+        if page == MAX_PAGES:
+            print(
+                f"  ! {source_name}: hit the {MAX_PAGES}-page safety cap while still within "
+                "the requested window — some older meetings may be missing this run"
+            )
 
     return items

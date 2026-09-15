@@ -9,15 +9,20 @@ Dataset: https://data.gov.lv/dati/lv/dataset/tap-publicetie-tiesibu-akti
 
 Each entry also links to one or more "document_versions" (draft protocol
 decision, annotation, etc.). Where a version is rendered by TAP's own
-"structuralizer" preview (a public, no-auth HTML endpoint — file attachments
-like .docx are skipped), we fetch it and pull the actual decision/annotation
-text, not just the act's title.
+"structuralizer" preview (a public, no-auth HTML endpoint), we fetch it and
+pull the actual decision/annotation text, not just the act's title. Where a
+version is instead a plain file attachment, only .docx (by far the most
+common attachment type here) is parsed directly — via python-docx, no
+external service — as a fallback when no structuralizer preview is
+available; other attachment types (.pdf, .xlsx, ...) are still skipped.
 """
 
 import html
+import io
 import re
 from datetime import date, datetime
 
+import docx
 import requests
 from bs4 import BeautifulSoup
 
@@ -29,6 +34,7 @@ RESOURCE_DATE_RE = re.compile(r"legal_acts_(\d{4})-(\d{2})-\d{2}-\d{4}-\d{2}-\d{
 STRUCTURALIZER_URL_RE = re.compile(r"/structuralizer/data/nodes/[0-9a-f-]+/preview$")
 HEADERS = {"User-Agent": "Mozilla/5.0 (policy-digest prototype; +startin.lv test task)"}
 FULL_TEXT_CHAR_LIMIT = 4000
+DOCX_EXTENSION = ".docx"
 
 
 def _months_between(start: date, end: date) -> set[tuple[int, int]]:
@@ -90,6 +96,18 @@ def _document_version_map(included: list[dict]) -> dict[str, dict]:
     return result
 
 
+def _extract_docx_text(content: bytes) -> str:
+    """Parses a downloaded .docx attachment's paragraph text. Malformed/corrupt content
+    (e.g. a redirected error page instead of the real file) must not take down the
+    whole fetch — degrade to "no text available" the same way a failed structuralizer
+    request already does below, not raise."""
+    try:
+        document = docx.Document(io.BytesIO(content))
+    except Exception:
+        return ""
+    return "\n".join(p.text.strip() for p in document.paragraphs if p.text.strip())
+
+
 def _fetch_full_text(entry: dict, doc_version_map: dict[str, dict]) -> str:
     version_ids = [
         rel["id"]
@@ -102,17 +120,32 @@ def _fetch_full_text(entry: dict, doc_version_map: dict[str, dict]) -> str:
             continue
         for doc_item in version.get("attributes", {}).get("items", []):
             preview_url = doc_item.get("url", "")
-            if not STRUCTURALIZER_URL_RE.search(preview_url):
-                continue  # a real file attachment (.docx etc.), not an inline preview — skip
-            try:
-                resp = requests.get(preview_url, headers=HEADERS, timeout=30)
-                resp.raise_for_status()
-            except requests.RequestException:
+            if not preview_url:
                 continue
-            soup = BeautifulSoup(resp.text, "html.parser")
-            node = soup.select_one(".structuralizer-tree")
-            if node:
-                text = node.get_text(" ", strip=True)
+            file_name = (doc_item.get("file_name") or "").lower()
+
+            if STRUCTURALIZER_URL_RE.search(preview_url):
+                try:
+                    resp = requests.get(preview_url, headers=HEADERS, timeout=30)
+                    resp.raise_for_status()
+                except requests.RequestException:
+                    continue
+                soup = BeautifulSoup(resp.text, "html.parser")
+                node = soup.select_one(".structuralizer-tree")
+                if node:
+                    text = node.get_text(" ", strip=True)
+                    if text:
+                        return text[:FULL_TEXT_CHAR_LIMIT]
+            elif file_name.endswith(DOCX_EXTENSION):
+                # A plain file attachment, not an inline structuralizer preview — the
+                # only kind we parse directly is .docx (the common case here); other
+                # attachment types (.pdf, .xlsx, ...) are still skipped, same as before.
+                try:
+                    resp = requests.get(preview_url, headers=HEADERS, timeout=30)
+                    resp.raise_for_status()
+                except requests.RequestException:
+                    continue
+                text = _extract_docx_text(resp.content)
                 if text:
                     return text[:FULL_TEXT_CHAR_LIMIT]
     return ""

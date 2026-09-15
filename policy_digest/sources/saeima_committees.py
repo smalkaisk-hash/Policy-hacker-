@@ -22,7 +22,7 @@ from .base import Item
 BASE = "https://titania.saeima.lv/livs/saeimasnotikumi.nsf"
 HEADERS = {"User-Agent": "Mozilla/5.0 (policy-digest prototype; +startin.lv test task)"}
 SOURCE_NAME = "Saeimas komisiju darba kārtības"
-MAX_MEETINGS = 300  # safety cap
+MAX_MEETINGS = 2000  # safety cap; a long lookback window can have many committee sittings
 
 DRAW_PE_RE = re.compile(
     r'draw_PE\(\{srt1:"[^"]*", time:"([^"]*)", title:"([^"]*)", next:"[^"]*", unid:"([^"]*)"\}\);'
@@ -58,6 +58,10 @@ def fetch_saeima_committees(
 
     for day in _daterange(since, today):
         if len(items) >= MAX_MEETINGS:
+            print(
+                f"  ! Saeimas komisiju darba kārtības: hit the {MAX_MEETINGS}-item safety cap "
+                f"before reaching {day.isoformat()} — some older sittings may be missing this run"
+            )
             break
 
         day_str = day.strftime("%d.%m.%Y")

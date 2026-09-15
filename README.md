@@ -10,12 +10,12 @@ Every source pulls the full article/document body, not just the headline.
 
 | Source | How it's fetched |
 |---|---|
-| **TAP portāls** (mandatory) | [Open dataset on data.gov.lv](https://data.gov.lv/dati/lv/dataset/tap-publicetie-tiesibu-akti) for metadata, plus full act text via TAP's public "structuralizer" preview endpoint. |
+| **TAP portāls** (mandatory) | [Open dataset on data.gov.lv](https://data.gov.lv/dati/lv/dataset/tap-publicetie-tiesibu-akti) for metadata, plus full act text via TAP's public "structuralizer" preview endpoint, or a direct `.docx` attachment parsed with `python-docx` when no preview exists. |
 | Valsts sekretāru sanāksme | `tapportals.mk.gov.lv/meetings/state_secretaries` — full agenda item text. |
 | Ministru kabineta protokoli | Same mechanism, `tapportals.mk.gov.lv/meetings/cabinet_ministers`. |
 | Ekonomikas ministrija | `em.gov.lv/lv/jaunumi` listing + each article's full body. |
 | LIAA | Same CMS as EM, `liaa.gov.lv/lv/jaunumi`. |
-| Altum | `altum.lv/par-altum/aktualitates/` + each article's full body. |
+| Altum | `altum.lv`'s open WordPress REST API (`/wp-json/wp/v2/posts`) — full pagination and server-side date filtering, so the lookback window isn't capped, and the full article body comes back in the same response (no second request needed). |
 | Saeimas komisiju darba kārtības | Public agenda feed on `titania.saeima.lv` (reached via saeima.lv's own committee-agenda link), all committees' sittings per day. |
 
 ## What counts as "startup-relevant"
@@ -23,14 +23,17 @@ Every source pulls the full article/document body, not just the headline.
 An item is flagged if it involves:
 - **Funding & support programs** — grants, EU funds, accelerator/incubator programs,
   LIAA/Altum initiatives, investment/VC programs.
-- **Regulatory or legal changes** affecting startups, SMEs, or tech companies — company law,
-  tax treatment, labor law, digital services/AI regulation, procurement rules for tech vendors.
+- **Regulatory or legal changes** affecting startups — company law, tax treatment, labor
+  law, digital services/AI regulation, procurement rules for tech vendors.
 - **Draft legislation or government initiatives** on innovation, digitalization, or
   entrepreneurship.
 
 Routine administrative/personnel/ceremonial items and unrelated sector regulation are
-excluded. Definition lives in [`policy_digest/classify.py`](policy_digest/classify.py)
-(`SYSTEM_PROMPT` and `KEYWORDS`).
+excluded. On top of the AI's judgment, a hard rule applies: the item's own text must
+literally use the word "jaunuzņēmums"/"starta uzņēmums" (or the English "startup") — being
+scoped to SMEs in general, or being a venture-capital program, is not enough on its own.
+Definition lives in [`policy_digest/classify.py`](policy_digest/classify.py)
+(`SYSTEM_PROMPT`, `EXPLICIT_STARTUP_KEYWORDS`, and `KEYWORDS` for the no-API-key fallback).
 
 ## How it works
 
@@ -49,7 +52,13 @@ fetch (7 sources, full text) → dedupe against local state → classify for rel
    article/document when it's published on more than one source, first by text similarity
    then (with an API key) an LLM pass for independently-written pieces about the same event.
 5. **Render** — `policy_digest/digest.py` writes a Latvian-language, startin.lv-branded
-   digest as `output/digest_<date>.md` and `.html`.
+   digest as `output/digest_<date>.md` and `.html`, split into two sections — **funding
+   opportunities** (apply-for, deadline-driven) and **regulatory changes & initiatives**
+   (monitor-and-react) — with source-level grouping inside each. An explicit deadline
+   found in an item's own text (application/submission/consultation date) is shown next
+   to it and flagged as urgent inside 14 days. A coverage line also lists every monitored
+   source with its relevant-item count for the period, including zero, so a quiet source
+   reads as "checked, nothing relevant" rather than "not checked".
 
 ## Setup
 
