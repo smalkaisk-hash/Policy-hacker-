@@ -75,6 +75,89 @@ def _is_discussion_only_event(title: str) -> bool:
     lowered = (title or "").lower()
     return any(kw in lowered for kw in DISCUSSION_ONLY_TITLE_KEYWORDS)
 
+
+# Caught in production 2026-09-16: "Atklāta pieteikšanās 'Venture Catalysts' 6. un
+# noslēdzošajam cēlienam..." — an ERAF-financed TRAINING program's next application round
+# — was marked relevant despite SYSTEM_PROMPT's explicit "training/course cohort launch...
+# is NOT relevant" rule, because the ERAF funder name and "atbalstīt jaunuzņēmumu
+# veidošanos" framing read as real financing. Verified against the source: it's mentorship/
+# coursework with no direct grant to participants at all. SYSTEM_PROMPT already draws the
+# line at a stated direct-support amount/percentage ("distinct from an actual incubation/
+# acceleration or financing program that provides direct financial support with a stated
+# amount/percentage") — this enforces that line in code instead of trusting the model to
+# apply it consistently every time.
+TRAINING_PROGRAM_TITLE_KEYWORDS = ["cēlien", "mentor", "posm", "apmācīb", "inkubācij"]
+# Matches "70%", "100 000 eiro", "27,5 miljoni eiro", "1,2 milj. EUR", "€50 000", etc.
+_DIRECT_FUNDING_AMOUNT_RE = re.compile(r"\d[\d.,\s]*\s*(%|eur\b|eiro\b|€|milj)", re.IGNORECASE)
+
+
+def _is_unfunded_training_round(title: str, text: str) -> bool:
+    lowered_title = (title or "").lower()
+    if not any(kw in lowered_title for kw in TRAINING_PROGRAM_TITLE_KEYWORDS):
+        return False
+    return not _DIRECT_FUNDING_AMOUNT_RE.search(text or "")
+
+
+# Caught in production 2026-09-16 (user fact-checked a live digest item against the
+# primary source): a Saeima committee agenda entry for ratifying the Cybercrime
+# Convention's Second Additional Protocol (cross-border electronic-evidence disclosure),
+# with consequential amendments to the Criminal Procedure Law, Electronic Communications
+# Law, and Information Society Services Law, was marked relevant — reason: "skar digitālo
+# pakalpojumu regulāciju un var ietekmēt jaunuzņēmumiem svarīgas digitālās pakalpojumi".
+# Verified directly against titania.saeima.lv: the agenda text is only a numbered routing
+# list (bill titles, responsible committee, document numbers) — no sentence anywhere
+# describes what any amendment actually changes. The model reached for background
+# knowledge of what "Electronic Communications Law" amendments generically might cover
+# instead of what the text said. SYSTEM_PROMPT already names this exact category as a
+# hedge-word failure to reject ("a cybercrime convention ratification bill justified only
+# as 'affecting digital service providers'"), but the model violated it anyway on real
+# data — same lesson as the two backstops above: needs a deterministic check, not just
+# stronger wording. This is criminal-procedure / law-enforcement cross-border cooperation
+# legislation, not business-facing digital-services regulation, regardless of which
+# communications-sector law it also happens to amend as a consequential change.
+CRIMINAL_PROCEDURE_COOPERATION_KEYWORDS = [
+    "kibernoziegum",             # Cybercrime Convention ratification/protocol
+    "kriminālprocesa likum",     # Criminal Procedure Law amendments
+    "elektronisko pierādījumu",  # cross-border electronic-evidence disclosure
+]
+_EXPLICIT_STARTUP_MENTION_RE = re.compile(
+    r"jaunuzņēm|starta uzņēmum|\bmvu\b|mazie un vidējie uzņēm", re.IGNORECASE
+)
+
+
+def _is_criminal_procedure_cooperation_bill(text: str) -> bool:
+    lowered = (text or "").lower()
+    if not any(kw in lowered for kw in CRIMINAL_PROCEDURE_COOPERATION_KEYWORDS):
+        return False
+    # An item could legitimately be about both cybercrime/law-enforcement cooperation AND
+    # a real startup mechanism in the same text — only override when nothing in the text
+    # itself actually names startups/SMEs, same evidence bar used everywhere else here.
+    return not _EXPLICIT_STARTUP_MENTION_RE.search(text or "")
+
+
+# Caught in production 2026-09-16, confirmed recurring (~2/3 real API runs): an item with
+# no substantive body text (see MIN_SUBSTANTIVE_BODY_LEN/NO_BODY_MARKER above) still gets
+# fabricated into relevant=True from the model's background knowledge of a named program,
+# even though NO_BODY_MARKER's prompt instruction already says not to guess — the original
+# 2026-09-15 audit bug, resurfaced now that the broader word-gate backstop is gone.
+# Reintroduced narrowly, scoped ONLY to items with no real body text — an item with actual
+# content to judge from (tax-law and SME-scoped items included) is never touched by this.
+NO_BODY_STARTUP_SIGNAL_KEYWORDS = [
+    "jaunuzņēm", "starta uzņēm", "startup", "start-up", "mvu",
+    "mazie un vidējie uzņēm", "mazo un vidējo uzņēm",
+    # "inkub"/"akseler" (not "inkubat"/"akselerat"): Latvian macron vowels are distinct
+    # characters from their plain form ("inkubācija" has "ā", not "a"), so the shorter
+    # root common to both "inkubators" and "inkubācija" is needed to match either form.
+    "inkub", "akseler", "riska kapitāl", "iespējkapitāl", "venture",
+]
+
+
+def _no_body_title_lacks_startup_signal(item: Item) -> bool:
+    if len(_body_text(item)) >= MIN_SUBSTANTIVE_BODY_LEN:
+        return False  # has real content — not this backstop's concern
+    lowered_title = (item.title or "").lower()
+    return not any(kw in lowered_title for kw in NO_BODY_STARTUP_SIGNAL_KEYWORDS)
+
 # Definition of "startup-relevant" for this digest (see README for the full writeup):
 # funding & support programs, regulatory/legal/tax changes affecting startups or SMEs,
 # and government initiatives on innovation, digitalization or entrepreneurship.
@@ -211,6 +294,14 @@ direct financial support with a stated amount/percentage and a formal applicatio
 remains relevant funding, not an event, even if it also includes mentorship as part of the
 package.
 
+Worked example of this exact failure, caught in production: "Atklāta pieteikšanās 'Venture
+Catalysts' 6. un noslēdzošajam cēlienam" is NOT relevant — it's an ERAF-financed training/
+mentorship program's next application round with no direct grant to participants anywhere
+in its own text, even though the ERAF funder name and "atbalstīt jaunuzņēmumu veidošanos"
+framing make it read like financing. A round/cohort/mentorship program only counts as real
+funding once its own text states a concrete amount — this is enforced in code as well as
+here, so guessing around it doesn't help (see `classify._is_unfunded_training_round`).
+
 Base your verdict strictly on what the item's own text says, not on what a program like this
 could plausibly also help with. If you have to reach or infer a startup connection the text
 itself doesn't make, mark it NOT relevant.
@@ -234,7 +325,9 @@ noting an EU regulation "could affect SMEs and startups" with no bill text yet; 
 convention ratification bill justified only as "affecting digital service providers"; a media
 law amendment justified only as "relevant to the digital services sector, including tech
 startups". Each names a broad sector, not a mechanism specific to startups/SMEs — that is the
-failure this section describes, not a real connection, no matter how plausible it sounds.
+failure this section describes, not a real connection, no matter how plausible it sounds. The
+cybercrime-convention case is enforced in code as well as here — see
+`classify._is_criminal_procedure_cooperation_bill` — so guessing around it doesn't help.
 
 Be very specific for startups, not just "business" in general — this is the single most common
 way an item wrongly passes. A funding program, grant competition, or investment scheme that is
@@ -281,6 +374,13 @@ class Classification:
     # (application/submission/consultation-comment-period) — see _validate_deadline and
     # _extract_deadline_fallback below for how each classification path fills this in.
     deadline: str | None = None
+    # Filled in by verify.verify_legislative_items() for law/government-decision items —
+    # the primary legal source it actually read (not just this scraper's own fetched
+    # text) and the specific clause quoted from it confirming startup/SME scope. None for
+    # every item verify.py doesn't touch (non-legislative sources, or verification
+    # skipped/failed) — never populated by classify.py itself.
+    verification_url: str | None = None
+    verification_quote: str | None = None
 
 
 # Splits on sentence-ending punctuation followed by a capital letter (Latvian included) —
@@ -568,6 +668,47 @@ def _classify_batch_with_llm(
                         "outcome yet)"
                     )
                     reason = f'[Atcelts — nosaukums norāda uz diskusiju/tikšanos, nevis lēmumu: "{reason}"]'
+                    relevant = False
+                # Deterministic backstop — caught in production 2026-09-16: a training/
+                # mentorship/incubation program's title with no stated funding amount
+                # anywhere in its own text is a course, not a financing mechanism, even
+                # when the model's reasoning is swayed by an EU-funds name-drop (ERAF, ESF)
+                # or startup-adjacent framing. See TRAINING_PROGRAM_TITLE_KEYWORDS above.
+                if relevant and _is_unfunded_training_round(it.title, it.raw_text):
+                    print(
+                        f"  ! overriding relevant=True to False for {it.title[:60]!r} — "
+                        "training/cohort program title with no stated funding amount in "
+                        "its own text (course, not financing)"
+                    )
+                    reason = f'[Atcelts — apmācību/kārtas programma bez norādīta finansējuma apjoma: "{reason}"]'
+                    relevant = False
+                # Deterministic backstop — caught in production 2026-09-16: a criminal-
+                # procedure / law-enforcement cross-border cooperation bill (cybercrime
+                # convention ratification, electronic-evidence disclosure) got a fabricated
+                # startup connection invented from the NAMES of the communications-sector
+                # laws it also amends, not from anything the agenda text actually says. See
+                # CRIMINAL_PROCEDURE_COOPERATION_KEYWORDS above.
+                if relevant and _is_criminal_procedure_cooperation_bill(it.raw_text):
+                    print(
+                        f"  ! overriding relevant=True to False for {it.title[:60]!r} — "
+                        "criminal-procedure/law-enforcement cooperation legislation "
+                        "(cybercrime convention, electronic-evidence disclosure), not "
+                        "business-facing digital-services regulation"
+                    )
+                    reason = f'[Atcelts — krimināltiesiskās sadarbības/kibernoziegumu regulējums, nevis uzņēmējdarbības regulējums: "{reason}"]'
+                    relevant = False
+                # Deterministic backstop — caught in production 2026-09-16, confirmed
+                # recurring on real API calls: an item with no substantive body text still
+                # gets fabricated into relevant=True from background knowledge of a named
+                # program. Scoped ONLY to no-body items — see
+                # _no_body_title_lacks_startup_signal above.
+                if relevant and _no_body_title_lacks_startup_signal(it):
+                    print(
+                        f"  ! overriding relevant=True to False for {it.title[:60]!r} — "
+                        "no substantive body text and title doesn't name startups/SMEs/"
+                        "VC/incubator (nothing to confirm relevance from)"
+                    )
+                    reason = f'[Atcelts — nav satura, un nosaukums nenorāda uz jaunuzņēmumiem/MVU: "{reason}"]'
                     relevant = False
                 out.append(
                     Classification(

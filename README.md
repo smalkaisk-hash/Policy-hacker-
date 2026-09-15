@@ -37,7 +37,8 @@ Definition lives in [`policy_digest/classify.py`](policy_digest/classify.py)
 ## How it works
 
 ```
-fetch (7 sources, full text) → dedupe against local state → classify for relevance → render digest
+fetch (7 sources, full text) → dedupe against local state → classify for relevance
+  → deep-verify legislative items against primary source → render digest
 ```
 
 1. **Fetch** — one module per source under `policy_digest/sources/`, returning normalized
@@ -50,7 +51,22 @@ fetch (7 sources, full text) → dedupe against local state → classify for rel
 4. **Dedupe (cross-source)** — `policy_digest/dedupe.py` merges the same underlying
    article/document when it's published on more than one source, first by text similarity
    then (with an API key) an LLM pass for independently-written pieces about the same event.
-5. **Render** — `policy_digest/digest.py` writes a Latvian-language, startin.lv-branded
+5. **Deep-verify (legislative items only)** — `policy_digest/verify.py` takes every item
+   still marked relevant from the three government-decision/law sources (TAP portāls,
+   Saeima committees, the two MK/VSS meeting feeds) and gives **Claude Sonnet 5** live
+   `web_search`/`web_fetch` tools, restricted to official Latvian government/legal domains
+   (`likumi.lv`, `saeima.lv`, `tapportals.mk.gov.lv`, ...), to go find and actually read the
+   bill's real text — using the bill/document number already scraped as the search key —
+   and confirm or reject the relevance claim against that primary text, not just the
+   (sometimes bare-titles-only) agenda snippet the scraper happened to fetch. A confirmed
+   item gets a "Pārbaudīts pret oriģinālo tekstu" line in the digest linking the actual
+   primary source it read; an item that can't be confirmed against real primary text is
+   held back, not shown with a caveat. Exists because a Saeima committee agenda item can
+   read as just a routing list of bill titles with no substantive description at all — see
+   CLAUDE.md's 2026-09-16 entry for the cybercrime-convention case this caught in
+   production. News/funding sources (Ekonomikas ministrija, LIAA, Altum) skip this step —
+   they're already full-article text with no separate primary legal source to check against.
+6. **Render** — `policy_digest/digest.py` writes a Latvian-language, startin.lv-branded
    digest as `output/digest_<date>.md` and `.html`, split into two sections — **funding
    opportunities** (apply-for, deadline-driven) and **regulatory changes & initiatives**
    (monitor-and-react) — with source-level grouping inside each. An explicit deadline

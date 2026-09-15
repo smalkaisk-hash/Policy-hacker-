@@ -177,7 +177,9 @@ FIXTURES = [
             "body text and was wrongly marked relevant with an invented 'clearly "
             "includes startup support' claim. The title says 'jaunu produktu' (new "
             "PRODUCTS), not jaunuzņēmumu (new companies/startups) — an easy but wrong "
-            "keyword association for the model to make."
+            "keyword association for the model to make. Confirmed recurring on ~2/3 real "
+            "API runs after the literal-word gate was dropped 2026-09-16 — now has a "
+            "deterministic backstop: classify._no_body_title_lacks_startup_signal."
         ),
         "source": "Ministru kabineta protokoli",
         "title": (
@@ -400,7 +402,13 @@ FIXTURES = [
             "Reinstated 2026-09-16: real direct funding (up to 70%) with a formal "
             "deadline, scoped to young SMEs ('mikro, mazajiem un vidējiem uzņēmumiem, "
             "kuri nav vecāki par pieciem gadiem') — an explicit age/size eligibility cap "
-            "counts as startup/SME-scoped even without the literal word jaunuzņēmums."
+            "counts as startup/SME-scoped even without the literal word jaunuzņēmums. "
+            "NOTE (2026-09-16, \"incubators are not policy\"): this exact kind of item no "
+            "longer reaches classify.py in production — news_listing.py now skips any "
+            "LIAA item with 'inkub' in its title at fetch time, before classification ever "
+            "sees it (see LIAA_INCUBATION_TITLE_KEYWORD). This fixture is kept to verify "
+            "classify.py's own eligibility-cap logic stays correct in isolation, not "
+            "because such an item can currently reach the real digest."
         ),
         "source": "LIAA",
         "title": "No prototipa līdz eksporta tirgum: LIAA atver rudens uzņemšanu Biznesa inkubācijas programmā",
@@ -552,6 +560,61 @@ FIXTURES = [
             "Latvijas jaunuzņēmumos to agrīnajā attīstības stadijā. Fonds paredzēts "
             "jaunuzņēmumiem, kas meklē finansējumu produkta attīstībai un tirgus "
             "paplašināšanai."
+        ),
+    },
+    {
+        "name": "unfunded_training_round_venture_catalysts",
+        "expect_relevant": False,
+        "note": (
+            "Caught in production 2026-09-16: verified against the real source "
+            "(liaa.gov.lv) to have no direct funding amount stated anywhere — pure "
+            "mentorship/coursework. Was wrongly marked relevant, swayed by the ERAF "
+            "funder name and 'atbalstīt jaunuzņēmumu veidošanos' framing. Now has a "
+            "deterministic backstop: classify._is_unfunded_training_round."
+        ),
+        "source": "LIAA",
+        "title": (
+            "Atklāta pieteikšanās “Venture Catalysts” 6. un noslēdzošajam "
+            "cēlienam: iespēja attīstīt zinātnē balstītas inovācijas un deep tech "
+            "uzņēmējdarbību"
+        ),
+        "body": (
+            "Venture Catalysts ir praktiska apmācību programma, kuru finansē ERAF "
+            "projekts, ar mērķi atbalstīt jaunuzņēmumu veidošanos un deep tech "
+            "komercializāciju. Programma piedāvā mentoringu, kursus un tīklošanās "
+            "iespējas. Pieteikšanās termiņš ir 2026. gada 4. oktobris."
+        ),
+    },
+    {
+        "name": "cybercrime_convention_agenda_no_startup_mention",
+        "expect_relevant": False,
+        "note": (
+            "Caught in production 2026-09-16 (user fact-checked a live digest item "
+            "against titania.saeima.lv): a Saeima committee agenda entry for ratifying "
+            "the Cybercrime Convention's Second Additional Protocol (cross-border "
+            "electronic-evidence disclosure), with consequential amendments to the "
+            "Criminal Procedure Law, Electronic Communications Law, and Information "
+            "Society Services Law, was wrongly marked relevant — the agenda text is only "
+            "a numbered routing list of bill titles/document numbers, no sentence "
+            "describes what any amendment actually changes, and nothing mentions "
+            "startups/SMEs. This is criminal-procedure/law-enforcement cooperation "
+            "legislation, not business-facing digital-services regulation. Now has a "
+            "deterministic backstop: classify._is_criminal_procedure_cooperation_bill."
+        ),
+        "source": "Saeimas komisiju darba kārtības",
+        "title": "Tautsaimniecības, agrārās, vides un reģionālās politikas komisijas sēde",
+        "body": (
+            "6. Par likumprojektu paketi: 6.1. „Par Konvencijas par kibernoziegumiem "
+            "otro papildu protokolu par pastiprinātu sadarbību un elektronisko "
+            "pierādījumu izpaušanu”. (Uz 1.lasījumu). (Atbildīgā – Ārlietu komisija). "
+            "(Nr. 1475/Lp14) (Dok. nr. 5167) 6.2. „Grozījumi Elektronisko sakaru "
+            "likumā”. (Uz 1.lasījumu). (Atbildīgā – Tautsaimniecības, agrārās, vides "
+            "un reģionālās politikas komisija). (Nr. 1477/Lp14) (Dok. nr. 5169) 6.3. "
+            "„Grozījumi Informācijas sabiedrības pakalpojumu likumā”. (Uz "
+            "1.lasījumu). (Atbildīgā – Tautsaimniecības, agrārās, vides un reģionālās "
+            "politikas komisija). (Nr. 1478/Lp14) (Dok. nr. 5170) 6.4. „Grozījumi "
+            "Kriminālprocesa likumā”. (Uz 1.lasījumu). (Atbildīgā – Juridiskā "
+            "komisija). (Nr. 1476/Lp14) (Dok. nr. 5168)"
         ),
     },
 ]

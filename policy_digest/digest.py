@@ -187,6 +187,8 @@ def render_markdown(
                 deadline_part = _deadline_markdown(c, run_date)
                 lines.append(f"- **[{title}]({c.item.url})** — {c.item.date}{deadline_part} · `{label}`")
                 lines.append(f"  > {reason}")
+                if c.verification_url:
+                    lines.append(f"  > Pārbaudīts pret oriģinālo tekstu: [{c.verification_url}]({c.verification_url})")
             lines.append("")
 
     return "\n".join(lines)
@@ -262,6 +264,11 @@ def render_html(
                 for c in items:
                     label = _category_label(c.category)
                     deadline_html = _deadline_html(c, run_date, esc)
+                    verified_html = (
+                        f"<p class='verified'>Pārbaudīts pret oriģinālo tekstu: "
+                        f"<a href='{esc(c.verification_url)}' target='_blank' rel='noopener'>{esc(c.verification_url)}</a></p>"
+                        if c.verification_url else ""
+                    )
                     body_parts.append(
                         "<li>"
                         "<div class='item-head'>"
@@ -270,6 +277,7 @@ def render_html(
                         "</div>"
                         f"<div class='item-meta'>{c.item.date}{deadline_html}</div>"
                         f"<p class='reason'>{esc(_oneline(c.reason))}</p>"
+                        f"{verified_html}"
                         "</li>"
                     )
                 body_parts.append("</ul>")
@@ -428,6 +436,12 @@ def render_html(
     font-size: 0.9rem;
     line-height: 1.55;
   }}
+  .verified {{
+    color: #1a7a4c;
+    margin: 0.3rem 0 0;
+    font-size: 0.78rem;
+  }}
+  .verified a {{ color: inherit; }}
   @media (max-width: 480px) {{
     .item-head {{ flex-direction: column; gap: 0.35rem; }}
   }}

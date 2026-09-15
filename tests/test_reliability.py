@@ -436,6 +436,237 @@ class DiscussionOnlyEventGateTests(unittest.TestCase):
         self.assertNotIn("Atcelts", out[0].reason)  # nothing to override, verdict was already correct
 
 
+class UnfundedTrainingRoundGateTests(unittest.TestCase):
+    """Caught in production 2026-09-16: the real item "Atklāta pieteikšanās 'Venture
+    Catalysts' 6. un noslēdzošajam cēlienam..." — an ERAF-financed training program's next
+    application round, verified against the source to have no direct grant to participants
+    anywhere in its own text — was marked relevant anyway, swayed by the ERAF funder name
+    and startup-adjacent framing. SYSTEM_PROMPT's "training/course cohort launch...is NOT
+    relevant" and "distinct from...a stated amount/percentage" sections already say this
+    should be rejected, but the model marked it relevant on real data anyway.
+    classify._is_unfunded_training_round is the deterministic backstop: a round/cohort/
+    mentorship-titled item with no funding amount anywhere in its own text."""
+
+    def _run_with_item(self, item, input_dict):
+        client = MagicMock()
+        client.messages.create.return_value = _mock_batch_response(input_dict)
+        return classify._classify_batch_with_llm(client, [item])
+
+    def test_real_production_case_venture_catalysts_round_is_overridden(self):
+        item = Item(
+            source="LIAA",
+            title=(
+                "Atklāta pieteikšanās “Venture Catalysts” 6. un noslēdzošajam "
+                "cēlienam: iespēja attīstīt zinātnē balstītas inovācijas un deep tech "
+                "uzņēmējdarbību"
+            ),
+            url="http://liaa/venture-catalysts", date="2026-09-01",
+            raw_text=(
+                "Atklāta pieteikšanās “Venture Catalysts” 6. un noslēdzošajam "
+                "cēlienam\n\nVenture Catalysts ir praktiska apmācību programma, kuru "
+                "finansē ERAF projekts, ar mērķi atbalstīt jaunuzņēmumu veidošanos un deep "
+                "tech komercializāciju. Programma piedāvā mentoringu, kursus un tīklošanās "
+                "iespējas. Pieteikšanās termiņš ir 2026. gada 4. oktobris."
+            ),
+        )
+        out, _ = self._run_with_item(item, {"results": [
+            {"index": 0, "relevant": True, "confidence": 0.9, "category": "funding",
+             "reason": "ERAF finansēta programma, kas atbalsta jaunuzņēmumu veidošanos.",
+             "deadline": "2026-10-04"}
+        ]})
+        self.assertEqual(len(out), 1)
+        self.assertFalse(out[0].relevant)
+        self.assertIn("Atcelts", out[0].reason)
+
+    def test_incubation_program_with_stated_amount_is_not_overridden(self):
+        # Contrast case: same "inkubācij" keyword, but a real stated funding percentage
+        # must not trip this gate.
+        item = Item(
+            source="LIAA", title="LIAA atver rudens uzņemšanu Biznesa inkubācijas programmā",
+            url="http://liaa/incubation", date="2026-09-09",
+            raw_text=(
+                "LIAA atver rudens uzņemšanu Biznesa inkubācijas programmā\n\nProgramma "
+                "piedāvā finansējuma atbalstu līdz 70% no attiecināmajām izmaksām "
+                "jaunuzņēmumiem, ar ekspertu konsultācijām un mentoringu."
+            ),
+        )
+        out, _ = self._run_with_item(item, {"results": [
+            {"index": 0, "relevant": True, "confidence": 0.95, "category": "funding",
+             "reason": "Reāls finansējuma mehānisms ar 70% atbalsta likmi."}
+        ]})
+        self.assertEqual(len(out), 1)
+        self.assertTrue(out[0].relevant)
+        self.assertNotIn("Atcelts", out[0].reason)
+
+    def test_non_training_title_is_unaffected(self):
+        # Contrast case: an item with none of the round/cohort/mentorship keywords in its
+        # title must not be touched by this gate at all, regardless of body content.
+        item = Item(
+            source="Saeima", title="Saeima pieņem grozījumus par nodokļu režīmu jaunuzņēmumos",
+            url="http://saeima/1", date="2026-09-08",
+            raw_text=(
+                "Saeima pieņem grozījumus par nodokļu režīmu jaunuzņēmumos\n\nGrozījumi "
+                "paredz atvieglotu nodokļu režīmu jaunuzņēmumiem, kas atbilst likumā "
+                "noteiktajiem kritērijiem."
+            ),
+        )
+        out, _ = self._run_with_item(item, {"results": [
+            {"index": 0, "relevant": True, "confidence": 0.95, "category": "regulation",
+             "reason": "Konkrēts nodokļu regulējums jaunuzņēmumiem."}
+        ]})
+        self.assertEqual(len(out), 1)
+        self.assertTrue(out[0].relevant)
+        self.assertNotIn("Atcelts", out[0].reason)
+
+
+class CriminalProcedureCooperationGateTests(unittest.TestCase):
+    """Caught in production 2026-09-16: the real item "Tautsaimniecības, agrārās, vides un
+    reģionālās politikas komisijas sēde" (2026-09-08 Saeima committee agenda) was marked
+    relevant with reason "...var ietekmēt jaunuzņēmumiem svarīgas digitālās pakalpojumi",
+    but verified directly against titania.saeima.lv the agenda text is only a numbered
+    routing list for ratifying the Cybercrime Convention's Second Additional Protocol
+    (electronic-evidence disclosure) plus consequential Electronic Communications Law /
+    Information Society Services Law amendments — no sentence anywhere describes what any
+    amendment changes. SYSTEM_PROMPT's cybercrime-convention worked example already says
+    this should be rejected, but the model marked it relevant on real data anyway.
+    classify._is_criminal_procedure_cooperation_bill is the deterministic backstop."""
+
+    def _run_with_item(self, item, input_dict):
+        client = MagicMock()
+        client.messages.create.return_value = _mock_batch_response(input_dict)
+        return classify._classify_batch_with_llm(client, [item])
+
+    def test_real_production_case_cybercrime_convention_agenda_is_overridden(self):
+        item = Item(
+            source="Saeimas komisiju darba kārtības",
+            title="Tautsaimniecības, agrārās, vides un reģionālās politikas komisijas sēde",
+            url="https://titania.saeima.lv/livs/saeimasnotikumi.nsf/0/801DFEB953442F6EC2258E67004B7810?OpenDocument",
+            date="2026-09-08",
+            raw_text=(
+                "Tautsaimniecības, agrārās, vides un reģionālās politikas komisijas sēde\n\n"
+                "6. Par likumprojektu paketi: 6.1. „Par Konvencijas par kibernoziegumiem "
+                "otro papildu protokolu par pastiprinātu sadarbību un elektronisko "
+                "pierādījumu izpaušanu”. (Uz 1.lasījumu). (Atbildīgā – Ārlietu komisija). "
+                "(Nr. 1475/Lp14) (Dok. nr. 5167) 6.2. „Grozījumi Elektronisko sakaru "
+                "likumā”. (Uz 1.lasījumu). (Atbildīgā – Tautsaimniecības, agrārās, vides "
+                "un reģionālās politikas komisija). (Nr. 1477/Lp14) (Dok. nr. 5169) 6.3. "
+                "„Grozījumi Informācijas sabiedrības pakalpojumu likumā”. (Uz "
+                "1.lasījumu). (Atbildīgā – Tautsaimniecības, agrārās, vides un reģionālās "
+                "politikas komisija). (Nr. 1478/Lp14) (Dok. nr. 5170) 6.4. „Grozījumi "
+                "Kriminālprocesa likumā”. (Uz 1.lasījumu). (Atbildīgā – Juridiskā "
+                "komisija). (Nr. 1476/Lp14) (Dok. nr. 5168)"
+            ),
+        )
+        out, _ = self._run_with_item(item, {"results": [
+            {"index": 0, "relevant": True, "confidence": 0.7, "category": "digitalization_innovation",
+             "reason": (
+                 "Likumprojektu pakets ietver Elektronisko sakaru likuma, Informācijas "
+                 "sabiedrības pakalpojumu likuma un kibernoziegumu konvencijas grozījumus, "
+                 "kas skar digitālo pakalpojumu regulāciju un var ietekmēt jaunuzņēmumiem "
+                 "svarīgas digitālās pakalpojumi."
+             )}
+        ]})
+        self.assertEqual(len(out), 1)
+        self.assertFalse(out[0].relevant)
+        self.assertIn("Atcelts", out[0].reason)
+
+    def test_explicit_startup_mention_is_not_overridden(self):
+        # Contrast case: if the item's own text actually names startups/SMEs alongside a
+        # cybercrime-cooperation topic, this gate must not blanket-reject it.
+        item = Item(
+            source="Saeima",
+            title="Grozījumi kibernoziegumu regulējumā jaunuzņēmumiem",
+            url="http://saeima/2", date="2026-09-08",
+            raw_text=(
+                "Grozījumi kibernoziegumu regulējumā jaunuzņēmumiem\n\nLikumprojekts paredz "
+                "jaunus kiberdrošības pienākumus tieši jaunuzņēmumiem un MVU, kas darbojas "
+                "IT nozarē, ar konkrētiem atbilstības kritērijiem."
+            ),
+        )
+        out, _ = self._run_with_item(item, {"results": [
+            {"index": 0, "relevant": True, "confidence": 0.9, "category": "regulation",
+             "reason": "Teksts tieši nosauc jaunuzņēmumus un MVU kā regulējuma subjektu."}
+        ]})
+        self.assertEqual(len(out), 1)
+        self.assertTrue(out[0].relevant)
+        self.assertNotIn("Atcelts", out[0].reason)
+
+    def test_unrelated_item_is_unaffected(self):
+        item = Item(
+            source="Saeima", title="Grozījumi Ceļu satiksmes likumā",
+            url="http://saeima/3", date="2026-09-08",
+            raw_text="Grozījumi Ceļu satiksmes likumā\n\nTehniski precizējumi par ceļu marķējumu.",
+        )
+        out, _ = self._run_with_item(item, {"results": [
+            {"index": 0, "relevant": False, "confidence": 0.9, "category": "other",
+             "reason": "Nesaistīts ar jaunuzņēmumiem."}
+        ]})
+        self.assertEqual(len(out), 1)
+        self.assertFalse(out[0].relevant)
+        self.assertNotIn("Atcelts", out[0].reason)
+
+
+class NoBodyStartupSignalGateTests(unittest.TestCase):
+    """Caught in production 2026-09-16, confirmed recurring on ~2/3 real API runs after
+    the literal-word gate was dropped: a no-body MK protocol item (only a title, no real
+    article/document text — hits classify.NO_BODY_MARKER) still gets fabricated into
+    relevant=True from the model's background knowledge of a named program.
+    NO_BODY_MARKER's prompt instruction already says not to guess, but the model violates
+    it on real data — same lesson as every other backstop in this file: reintroduced
+    narrowly, scoped ONLY to items with no substantive body text (an item with real
+    content is never touched by this). classify._no_body_title_lacks_startup_signal is
+    the deterministic check."""
+
+    def _run_with_item(self, item, input_dict):
+        client = MagicMock()
+        client.messages.create.return_value = _mock_batch_response(input_dict)
+        return classify._classify_batch_with_llm(client, [item])
+
+    def test_no_body_item_with_generic_title_is_overridden(self):
+        item = Item(
+            source="MK", title='Noteikumu projekts "Atbalsts jaunu produktu attīstībai"',
+            url="http://mk/501", date="2026-09-08",
+            raw_text='Noteikumu projekts "Atbalsts jaunu produktu attīstībai"',
+        )
+        out, _ = self._run_with_item(item, {"results": [
+            {"index": 0, "relevant": True, "confidence": 0.85, "category": "funding",
+             "reason": "Nosaukums nepārprotami norāda uz jaunuzņēmumu atbalstu."}
+        ]})
+        self.assertEqual(len(out), 1)
+        self.assertFalse(out[0].relevant)
+        self.assertIn("Atcelts", out[0].reason)
+
+    def test_no_body_item_with_explicit_title_is_not_overridden(self):
+        item = Item(
+            source="MK", title="Atbalsts jaunuzņēmumiem: grozījumi programmas noteikumos",
+            url="http://mk/502", date="2026-09-08",
+            raw_text="Atbalsts jaunuzņēmumiem: grozījumi programmas noteikumos",
+        )
+        out, _ = self._run_with_item(item, {"results": [
+            {"index": 0, "relevant": True, "confidence": 0.8, "category": "funding",
+             "reason": "Nosaukums tieši nosauc jaunuzņēmumus."}
+        ]})
+        self.assertEqual(len(out), 1)
+        self.assertTrue(out[0].relevant)
+        self.assertNotIn("Atcelts", out[0].reason)
+
+    def test_item_with_substantive_body_is_unaffected_regardless_of_title(self):
+        # A real body's content is what matters once there's enough of it — this backstop
+        # must not touch items that have actual text to judge from.
+        item = Item(
+            source="MK", title='Noteikumu projekts "Atbalsts jaunu produktu attīstībai"',
+            url="http://mk/503", date="2026-09-08",
+            raw_text=_SUBSTANTIVE_BODY,  # contains "jaunuzņēmumi" in the body
+        )
+        out, _ = self._run_with_item(item, {"results": [
+            {"index": 0, "relevant": True, "confidence": 0.9, "category": "funding",
+             "reason": "Pamatots ar pilnu teksta saturu."}
+        ]})
+        self.assertEqual(len(out), 1)
+        self.assertTrue(out[0].relevant)
+        self.assertNotIn("Atcelts", out[0].reason)
+
+
 class RenderMarkdownWhitespaceTests(unittest.TestCase):
     """A scraped title can contain an embedded literal newline (BeautifulSoup's
     get_text(strip=True) only trims the OUTER whitespace of each text node, not an

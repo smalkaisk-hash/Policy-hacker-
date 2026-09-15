@@ -14,6 +14,19 @@ from .base import Item
 HEADERS = {"User-Agent": "Mozilla/5.0 (policy-digest prototype; +startin.lv test task)"}
 MAX_PAGES = 40  # safety cap; the loop normally stops early once past `since` (see warning below)
 
+# User decision 2026-09-16 ("incubators are not policy"): LIAA incubation-program content
+# should never be scraped at all — stronger than "never classify as relevant"
+# (classify._is_unfunded_training_round already rejects an unfunded incubation/mentorship
+# round at classification time; this also excludes a program that states a real funding
+# amount, e.g. "finanšu atbalstu līdz 70%"). This digest tracks funding/regulatory
+# mechanisms, not institutions that happen to run incubation programs — a source-level
+# exclusion, not a classification-time filter, so it applies before the article body is
+# even fetched. Scoped to LIAA only (this scraper is shared with Ekonomikas ministrija,
+# which doesn't run incubation programs). "inkub" (not "inkubat"/"inkubāc" separately):
+# Latvian macron vowels are distinct characters ("inkubācija" has "ā", not "a"), so the
+# shorter root common to both "inkubators" and "inkubācija" is needed to match either form.
+LIAA_INCUBATION_TITLE_KEYWORD = "inkub"
+
 
 def _fetch_article_body(url: str) -> str:
     """Both em.gov.lv and liaa.gov.lv render the article body in the same
@@ -72,6 +85,10 @@ def fetch_news_listing(
                 continue  # listing is newest-first; skip, keep checking rest of this page
 
             title = link.get_text(strip=True)
+            if source_name == "LIAA" and LIAA_INCUBATION_TITLE_KEYWORD in title.lower():
+                print(f"  ! {source_name}: skipping incubation-program item {title[:60]!r} — never scraped, per product decision")
+                continue
+
             href = link["href"]
             full_url = href if href.startswith("http") else base_url + href
             summary = summary_tag.get_text(strip=True) if summary_tag else ""

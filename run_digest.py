@@ -33,6 +33,7 @@ from policy_digest.sources import (
     fetch_tap_legal_acts,
 )
 from policy_digest.state import load_seen, save_seen
+from policy_digest.verify import LEGISLATIVE_SOURCES, verify_legislative_items
 
 ROOT = Path(__file__).parent
 OUTPUT_DIR = ROOT / "output"
@@ -120,6 +121,13 @@ def main():
             f"  ! {len(unclassified_items)} item(s) got no classification verdict this run "
             "(API failure) — will be retried next run, not marked as seen."
         )
+
+    to_verify = sum(1 for c in classifications if c.relevant and c.item.source in LEGISLATIVE_SOURCES)
+    if to_verify:
+        print(f"\nDeep-verifying {to_verify} legislative item(s) against their primary legal text...")
+    classifications = verify_legislative_items(classifications)
+    still_relevant = sum(1 for c in classifications if c.relevant)
+    print(f"{still_relevant} item(s) relevant after verification.")
 
     all_source_names = [name for name, _ in SOURCES]
 
