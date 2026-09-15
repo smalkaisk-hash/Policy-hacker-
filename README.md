@@ -159,13 +159,3 @@ once it's deployed at least once, and also in the workflow run's summary page.
   were republished a day or more apart it wouldn't be caught.
 - **Saeima**: pulled from an internal-looking Domino endpoint reached only via a redirect from the
   public site — undocumented, so it could change without notice; no official API was found.
-
-## What's next (week 1 → month 3)
-
-- **Week 1**: run this as-is via a scheduled GitHub Actions workflow (free) that posts the
-  digest to a Slack channel via an incoming webhook — lowest friction, no server to maintain.
-- **Month 3**: move dedupe state from a JSON file to SQLite; add email delivery
-  (Resend/Postmark/SMTP) alongside Slack for non-technical stakeholders; parse TAP's .docx
-  attachments for the acts that don't have a structuralizer preview; widen cross-source
-  dedupe beyond same-day matching; tune the keyword list and classifier prompt against a few
-  weeks of real flagged/skipped items.
