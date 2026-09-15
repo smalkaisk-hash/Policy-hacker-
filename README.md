@@ -29,11 +29,10 @@ An item is flagged if it involves:
   entrepreneurship.
 
 Routine administrative/personnel/ceremonial items and unrelated sector regulation are
-excluded. On top of the AI's judgment, a hard rule applies: the item's own text must
-literally use the word "jaunuzņēmums"/"starta uzņēmums" (or the English "startup") — being
-scoped to SMEs in general, or being a venture-capital program, is not enough on its own.
+excluded, along with events (contests, mentor calls, course cohorts) and generic
+"business in general" programs with no startup/SME-specific eligibility scoping.
 Definition lives in [`policy_digest/classify.py`](policy_digest/classify.py)
-(`SYSTEM_PROMPT`, `EXPLICIT_STARTUP_KEYWORDS`, and `KEYWORDS` for the no-API-key fallback).
+(`SYSTEM_PROMPT`, and `KEYWORDS` for the no-API-key fallback).
 
 ## How it works
 

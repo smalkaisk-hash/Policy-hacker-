@@ -149,16 +149,17 @@ FIXTURES = [
         ),
     },
     {
-        "name": "venture_capital_program_without_literal_word_now_rejected",
+        "name": "venture_capital_program_named_but_no_body_text",
         "expect_relevant": False,
         "note": (
-            "Superseded by product decision 2026-09-16 (see CLAUDE.md and "
-            "classify.EXPLICIT_STARTUP_KEYWORDS): a venture/risk-capital-named program "
-            "('Iespējkapitāla ieguldījumi') no longer passes on the VC label alone — the "
-            "item's own text (here, no body at all) must literally say "
-            "jaunuzņēmums/starta uzņēmums/startup somewhere, which this title doesn't. "
-            "Was previously expect_relevant=True under an earlier VC-name carve-out that "
-            "the user explicitly removed."
+            "Correctly rejected even with the VC/SME eligibility-cap carve-out restored "
+            "2026-09-16: this item has NO body text at all (title only), so there's "
+            "nothing to confirm an actual eligibility cap from — exactly the fabrication "
+            "risk NO_BODY_MARKER exists to prevent (this is the real MK protocol item "
+            "that motivated the 2026-09-15 audit fix in the first place). Contrast with "
+            "venture_capital_for_startups_word_present_stays_relevant and "
+            "altum_program_actually_startup_scoped below, which have real body text "
+            "stating the eligibility cap and correctly pass."
         ),
         "source": "Ministru kabineta protokoli",
         "title": (
@@ -283,14 +284,14 @@ FIXTURES = [
         ),
     },
     {
-        "name": "funding_discovery_tool_without_literal_word_now_rejected",
-        "expect_relevant": False,
+        "name": "funding_discovery_tool_without_literal_word",
+        "expect_relevant": True,
         "note": (
-            "Superseded by product decision 2026-09-16: the funding-discovery-tool "
-            "carve-out was explicitly dropped — 'jaundibinātiem uzņēmumiem' (newly "
-            "founded companies) is not the literal word jaunuzņēmums/startup, so this no "
-            "longer passes despite genuinely being about funding discovery. Was "
-            "previously expect_relevant=True under the now-removed carve-out."
+            "Reinstated 2026-09-16: the funding-discovery-tool carve-out is back in "
+            "SYSTEM_PROMPT — a tool that helps founders (including newly-founded "
+            "companies, 'jaundibinātiem uzņēmumiem') find the right government support "
+            "is relevant even open to companies of any size, since its function is "
+            "funding discovery, not the financing itself."
         ),
         "source": "LIAA",
         "title": "LIAA piedāvā rīku, kas palīdz uzņēmējiem atrast piemērotāko atbalstu",
@@ -393,15 +394,13 @@ FIXTURES = [
         ),
     },
     {
-        "name": "incubation_program_sme_scoped_no_literal_word_now_rejected",
-        "expect_relevant": False,
+        "name": "incubation_program_sme_scoped_no_literal_word",
+        "expect_relevant": True,
         "note": (
-            "Superseded by product decision 2026-09-16: real direct funding (up to 70%) "
-            "with a formal deadline used to be enough on its own once scoped to young "
-            "SMEs ('mikro, mazajiem un vidējiem uzņēmumiem, kuri nav vecāki par pieciem "
-            "gadiem'). That SME/age-cap scoping is no longer sufficient — 'jaunos "
-            "uzņēmumus' (new companies) is not the literal word jaunuzņēmums/startup, so "
-            "this now gets rejected. Was previously expect_relevant=True."
+            "Reinstated 2026-09-16: real direct funding (up to 70%) with a formal "
+            "deadline, scoped to young SMEs ('mikro, mazajiem un vidējiem uzņēmumiem, "
+            "kuri nav vecāki par pieciem gadiem') — an explicit age/size eligibility cap "
+            "counts as startup/SME-scoped even without the literal word jaunuzņēmums."
         ),
         "source": "LIAA",
         "title": "No prototipa līdz eksporta tirgum: LIAA atver rudens uzņemšanu Biznesa inkubācijas programmā",
@@ -514,17 +513,19 @@ FIXTURES = [
             "kopumā, nevis uz konkrētiem jaunuzņēmumu finansējuma nosacījumiem."
         ),
     },
-    # --- Fixtures below added 2026-09-16 for the hard "literal word required, no
-    # SME/VC/incubator carve-out, every category/source" product decision — see CLAUDE.md
-    # and memory/project_policy_hacker_startup_word_gate.md.
+    # --- Fixtures below added 2026-09-16, originally for a hard "literal word required,
+    # no SME/VC/incubator carve-out" gate that was itself reversed the same day (see
+    # CLAUDE.md and memory/project_policy_hacker_startup_word_gate.md) — kept because
+    # they're still valid regression cases under the reinstated eligibility-cap prompt.
     {
         "name": "money_to_non_startup_company_no_word_at_all",
         "expect_relevant": False,
         "note": (
-            "The exact scenario that motivated the 2026-09-16 hard word requirement: "
-            "ALTUM financing a solar park project. Real money, a real company, but "
-            "nothing in the item's own text ever calls it a startup — 'atjaunojamās "
-            "enerģijas uzņēmums' (renewable energy company) is not the word."
+            "ALTUM financing a solar park project, open to 'jebkuram Latvijas "
+            "energoražotājam neatkarīgi no uzņēmuma lieluma vai darbības ilguma' — no "
+            "size/stage eligibility cap at all, so this stays NOT relevant even without "
+            "the literal-word gate: 'atjaunojamās enerģijas uzņēmums' (renewable energy "
+            "company) is general business, not a startup/SME-scoped program."
         ),
         "source": "Altum",
         "title": 'ALTUM piešķir aizdevumu SIA "Saules Parks" saules elektrostacijas būvniecībai',
@@ -540,10 +541,9 @@ FIXTURES = [
         "name": "venture_capital_for_startups_word_present_stays_relevant",
         "expect_relevant": True,
         "note": (
-            "Contrast case for the fixture above and for the now-rejected VC-by-name "
-            "fixture: venture capital that DOES use the literal word 'jaunuzņēmumiem' in "
-            "its own text still passes — the gate isn't anti-VC, it just requires the "
-            "word to actually be there instead of being inferred from the VC label."
+            "Venture capital explicitly scoped to early-stage jaunuzņēmumi — passes "
+            "cleanly under the eligibility-cap wording regardless of the literal word "
+            "also being present."
         ),
         "source": "Altum",
         "title": "ALTUM izsludina jaunu riska kapitāla fondu jaunuzņēmumiem",

@@ -56,20 +56,24 @@ NO_BODY_MARKER = (
     "NOT relevant.]"
 )
 
-# Product decision 2026-09-16: relevance requires the literal word "startup" (or its
-# Latvian form/synonym) somewhere in the item's OWN text — no SME/MVU carve-out, no
-# VC/incubator/accelerator carve-out. Deliberately narrower than earlier revisions of this
-# list: a program scoped to "mazie un vidējie uzņēmumi" that never says "jaunuzņēmums"
-# does NOT count, and neither does a venture-capital-named program that never uses the
-# word either — see the matching SYSTEM_PROMPT rewrite below. Applied globally to every
-# classified item (any category, any source), not just funding items — see
-# _has_explicit_startup_signal below.
-EXPLICIT_STARTUP_KEYWORDS = ["jaunuzņēm", "starta uzņēm", "startup", "start-up"]
+# Caught in production 2026-09-16: an item can genuinely be about startups while still
+# just being a meeting/discussion with no policy outcome — e.g. "Valainis ar piecu ES
+# valstu kolēģiem PĀRRUNĀ Digitālā omnibusa ietekmi uz uzņēmējdarbību" (a minister
+# DISCUSSES a regulation's effects). SYSTEM_PROMPT's "Events are not policy" / hedge-word
+# sections already say this should be rejected, but a prompt instruction the model has
+# already been shown to violate on this exact real item needs a deterministic backstop,
+# not just stronger wording. A title verb naming a discussion/meeting rather than a
+# decision is a strong, cheap signal: real policy actions get titled with an action verb
+# (izsludina, apstiprina, pieņem, piešķir), not a talking-about verb.
+DISCUSSION_ONLY_TITLE_KEYWORDS = [
+    "pārrunā", "pārrunāja", "apspriež", "apsprieda", "diskutē", "diskutēja",
+    "sarunājas", "sarunājās", "tiekas ar", "tikās ar",
+]
 
 
-def _has_explicit_startup_signal(text: str) -> bool:
-    lowered = (text or "").lower()
-    return any(kw in lowered for kw in EXPLICIT_STARTUP_KEYWORDS)
+def _is_discussion_only_event(title: str) -> bool:
+    lowered = (title or "").lower()
+    return any(kw in lowered for kw in DISCUSSION_ONLY_TITLE_KEYWORDS)
 
 # Definition of "startup-relevant" for this digest (see README for the full writeup):
 # funding & support programs, regulatory/legal/tax changes affecting startups or SMEs,
@@ -150,30 +154,24 @@ SYSTEM_PROMPT = """You are a policy analyst for startin.lv, a Latvian startup ac
 You review Latvian government documents (draft legislation, cabinet/state-secretary meeting
 agenda items, ministry and agency news) and decide which are relevant to startups.
 
-Mark an item RELEVANT only if it involves any of:
-- funding or support programs FOR STARTUPS SPECIFICALLY (grants, EU funds,
-  accelerator/incubator programs, investment/venture capital initiatives, LIAA/Altum
-  programs) — the item's own text must itself use the word "jaunuzņēmums"/"jaunuzņēmumi"
-  (or "starta uzņēmums"/the English "startup") to describe who the program/funding is for.
-  Being scoped to SMEs ("mazie un vidējie uzņēmumi"/MVU) is NOT enough on its own — an
-  SME-wide program that never says "jaunuzņēmums" is NOT relevant. Being a venture/risk
-  capital ("riska kapitāls"/"iespējkapitāls") program is NOT enough on its own either — a VC
-  fund that never says "jaunuzņēmums"/"startup" anywhere in its own text is NOT relevant,
-  even though VC is usually startup-oriented in practice. A funding-discovery tool or
-  wizard open to "companies of any size" is NOT relevant unless it too uses the word
-  somewhere. A news item about one specific company receiving financing (e.g. an Altum/LIAA
-  loan, an investment) is NOT relevant unless the item's own text calls that company a
-  "jaunuzņēmums"/"startup" — "SME", "innovative company", "tech company", or "Latvian
-  company" is not the same word and does not count
-- legal or regulatory changes affecting startups specifically (company law, tax treatment
-  incl. reinvested profit or employee stock options, labor law, digital services or AI
-  regulation, public procurement rules relevant to tech vendors) — again, the item's own
-  text must itself say "jaunuzņēmums"/"jaunuzņēmumi"/"startup" somewhere in connection with
-  the change; a change that applies to companies or SMEs in general without that word is
-  NOT relevant
-- draft legislation or government initiatives on innovation, digitalization, or
-  entrepreneurship that explicitly names startups ("jaunuzņēmums"/"jaunuzņēmumi"/"startup")
-  as who it's for or about
+Mark an item RELEVANT if it involves any of:
+- funding or support programs for startups/SMEs (grants, EU funds, accelerator/incubator
+  programs, investment/venture capital initiatives, LIAA/Altum programs) — but only when the
+  program's own eligibility is actually scoped to startups/SMEs/early-stage companies (a size,
+  turnover, or company-age cap; a jaunuzņēmumi/MVU-branded program; or a venture/risk-capital
+  fund investing in early-stage companies, even if its own text never uses the literal word
+  "jaunuzņēmums"). A funding-discovery tool or wizard that helps founders find the right
+  program is relevant even when open to companies of any size — its function is funding
+  discovery, not the financing itself. An Altum or LIAA loan or grant open to "Latvijas
+  uzņēmumi" in general, with no size or stage restriction, is NOT relevant merely because
+  Altum/LIAA are institutions that also run SME programs elsewhere — and a news item about one
+  specific company receiving such general-eligibility financing is NOT relevant unless the
+  item's own text says that company is a startup/SME (its size, age, or explicit SME/
+  jaunuzņēmums framing), not just that it's "a Latvian company"
+- legal or regulatory changes affecting startups, SMEs, or tech companies (company law, tax
+  treatment incl. reinvested profit or employee stock options, labor law, digital services or
+  AI regulation, public procurement rules relevant to tech vendors)
+- draft legislation or government initiatives on innovation, digitalization, or entrepreneurship
 
 Mark it NOT relevant if it's routine administrative/personnel/ceremonial business, or concerns a
 sector with no plausible startup angle (e.g. agricultural subsidies unrelated to agtech,
@@ -182,8 +180,7 @@ e.g. requalification or activation measures for the unemployed, youth not in emp
 economically inactive people — even when the source text tacks on a generic line about
 supporting "entrepreneurship" or the "startup ecosystem": that connection only counts if the
 item's actual substance (funding mechanism, eligibility, regulatory change) is about startups
-specifically (using that literal word — see the hard requirement below), not general
-jobseekers or self-employment in general.
+or SMEs specifically, not general jobseekers or self-employment in general.
 
 Also NOT relevant: a delegation, trade mission, conference, or ceremonial event announcement
 that merely mentions startups as one invited/attending category, with no funding mechanism,
@@ -257,15 +254,6 @@ item's own text never states that company's size, age, or an explicit startup/SM
 label — "international company" or "tech company" is not "startup", and a vague closing line
 like "this strengthens the innovation ecosystem" is the ecosystem-truism failure, not a real
 connection to this specific item.
-
-Hard requirement, no exceptions: if the item's own text never uses the word
-"jaunuzņēmums"/"jaunuzņēmumi", "starta uzņēmums", or the English "startup"/"start-up"
-anywhere in connection with the funding/regulation itself, the item is NOT relevant — full
-stop, regardless of how startup-adjacent the program, institution, or sector sounds. There
-are no carve-outs for SME scoping, VC/risk-capital framing, funding-discovery tools, or any
-other inferred connection: this literal word is the only signal that counts. (This is
-enforced in code as well as here, so guessing around it doesn't help — see
-`classify._has_explicit_startup_signal`.)
 
 Your one-line reason must point to something specific and concrete in the item's own text (the
 actual mechanism, amount, eligibility criterion, or clause) — never a generic assertion like
@@ -567,24 +555,19 @@ def _classify_batch_with_llm(
                     print(f"  ! classification result for batch item {i} ({it.title[:60]!r}) missing/null 'reason'")
                 relevant = r.get("relevant") if r.get("relevant") is not None else False
                 reason = r.get("reason") if r.get("reason") is not None else ""
-                # Deterministic backstop — product decision 2026-09-16: relevance requires
-                # the literal word "jaunuzņēmums"/"starta uzņēmums"/"startup" somewhere in
-                # the item's own text (title + body), no exceptions for SME scoping, VC
-                # framing, or any other inferred connection. Checked against the full item
-                # text so a real body's wording counts too, not just the title — this
-                # supersedes and subsumes the old no-body-only check (a no-body item's
-                # "text" is just its title anyway, so the outcome there is unchanged).
-                # Applied to every category/source, not just funding items.
-                if relevant and not _has_explicit_startup_signal(it.raw_text):
+                # Deterministic backstop — caught in production 2026-09-16: a title verb
+                # naming a discussion/meeting ("pārrunā", "apspriež", ...) rather than a
+                # decision means there's no actual policy outcome yet, even when the item
+                # genuinely contains the word "jaunuzņēmumi" (so the gate above doesn't
+                # catch it) and the model says relevant=True anyway. See
+                # DISCUSSION_ONLY_TITLE_KEYWORDS above.
+                if relevant and _is_discussion_only_event(it.title):
                     print(
                         f"  ! overriding relevant=True to False for {it.title[:60]!r} — "
-                        "item's own text never uses the word jaunuzņēmums/starta uzņēmums/"
-                        "startup (model's claim wasn't grounded in that literal signal)"
+                        "title names a discussion/meeting, not a decision (no policy "
+                        "outcome yet)"
                     )
-                    reason = (
-                        f'[Atcelts — trūkst vārda "jaunuzņēmums"/"starta uzņēmums"/"startup": '
-                        f'"{reason}"]'
-                    )
+                    reason = f'[Atcelts — nosaukums norāda uz diskusiju/tikšanos, nevis lēmumu: "{reason}"]'
                     relevant = False
                 out.append(
                     Classification(

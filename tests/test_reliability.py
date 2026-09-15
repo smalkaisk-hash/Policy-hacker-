@@ -47,11 +47,10 @@ def _items():
     ]
 
 
-# At least classify.MIN_SUBSTANTIVE_BODY_LEN (150) chars, AND contains an explicit
-# startup-word signal — these malformed-response/retry/confidence tests are about
-# response-parsing and confidence filtering, not about the separate deterministic
-# startup-word gate (see StartupWordGateTests below), so a body missing either property
-# here would trip an unrelated override and make relevant=True results fail for the
+# At least classify.MIN_SUBSTANTIVE_BODY_LEN (150) chars — these malformed-response/
+# retry/confidence tests are about response-parsing and confidence filtering, not about
+# the separate discussion-only-event backstop (see DiscussionOnlyEventGateTests below),
+# so a body missing that threshold here would make relevant=True results fail for the
 # wrong reason.
 _SUBSTANTIVE_BODY = (
     "Item 0\n\nThis is a sufficiently long article body describing a real government "
@@ -367,109 +366,70 @@ class ClassifyMalformedResponseTests(unittest.TestCase):
         self.assertEqual(client.messages.create.call_count, 2)
 
 
-class StartupWordGateTests(unittest.TestCase):
-    """Two overlapping product decisions enforced deterministically in classify.py:
-
-    1. Caught in production 2026-09-15: real MK protocol items with no substantive body
-       text (hit classify.NO_BODY_MARKER) still came back relevant=True, with the model
-       inventing eligibility from its own background knowledge of a named program rather
-       than anything in the text it was shown.
-    2. Product decision 2026-09-16 (see CLAUDE.md and
-       memory/project_policy_hacker_startup_word_gate.md): relevance requires the literal
-       word jaunuzņēmums/starta uzņēmums/startup somewhere in the item's OWN full text —
-       no SME/MVU carve-out, no VC/risk-capital carve-out, and it applies to every item
-       regardless of category/source or whether it has a substantive body, not just the
-       no-body case. classify._has_explicit_startup_signal is the single check behind
-       both: it's just checked against the title alone for a no-body item (since that's
-       all the text there is) and against the full raw_text otherwise."""
+class DiscussionOnlyEventGateTests(unittest.TestCase):
+    """Caught in production 2026-09-16: the real item "Valainis ar piecu ES valstu
+    kolēģiem PĀRRUNĀ Digitālā omnibusa ietekmi uz uzņēmējdarbību" genuinely mentions
+    startups/SMEs but is still just a ministerial discussion with no policy outcome —
+    SYSTEM_PROMPT's "Events are not policy" section already says this should be rejected,
+    but the model marked it relevant anyway on real data. classify._is_discussion_only_event
+    is the deterministic backstop: a title verb naming a discussion/meeting rather than a
+    decision."""
 
     def _run_with_item(self, item, input_dict):
         client = MagicMock()
         client.messages.create.return_value = _mock_batch_response(input_dict)
         return classify._classify_batch_with_llm(client, [item])
 
-    def test_no_body_item_with_generic_title_is_overridden_to_not_relevant(self):
-        # "jaunu produktu" (new PRODUCTS) — no startup-word signal at all.
-        item = Item(source="MK", title='Grozījumi noteikumos Nr. 501 "Atbalsts jaunu produktu attīstībai"',
-                    url="http://mk/1", date="2026-09-08",
-                    raw_text='Grozījumi noteikumos Nr. 501 "Atbalsts jaunu produktu attīstībai"')
-        out, _ = self._run_with_item(item, {"results": [
-            {"index": 0, "relevant": True, "confidence": 0.8, "category": "funding",
-             "reason": "Šī skaidri ietver jaunuzņēmumu atbalstu."}
-        ]})
-        self.assertEqual(len(out), 1)
-        self.assertFalse(out[0].relevant)
-        self.assertIn("Atcelts", out[0].reason)
-
-    def test_no_body_item_with_explicit_title_is_not_overridden(self):
-        item = Item(source="MK", title="Atbalsts jaunuzņēmumiem: grozījumi programmas noteikumos",
-                    url="http://mk/2", date="2026-09-08",
-                    raw_text="Atbalsts jaunuzņēmumiem: grozījumi programmas noteikumos")
-        out, _ = self._run_with_item(item, {"results": [
-            {"index": 0, "relevant": True, "confidence": 0.8, "category": "funding",
-             "reason": "Nosaukums tieši nosauc jaunuzņēmumus."}
-        ]})
-        self.assertEqual(len(out), 1)
-        self.assertTrue(out[0].relevant)
-        self.assertNotIn("Atcelts", out[0].reason)
-
-    def test_no_body_item_naming_venture_capital_without_the_word_is_now_overridden(self):
-        # Superseded 2026-09-16: a venture-capital-named program used to pass on the VC
-        # label alone (no jaunuzņēmumi/MVU wording needed) — that carve-out was
-        # explicitly removed. "Iespējkapitāla ieguldījumi" never says the literal word,
-        # so this must now be rejected just like any other unproven claim.
-        item = Item(source="MK", title='Grozījumi noteikumos Nr. 463 "Iespējkapitāla ieguldījumi"',
-                    url="http://mk/5", date="2026-09-08",
-                    raw_text='Grozījumi noteikumos Nr. 463 "Iespējkapitāla ieguldījumi"')
-        out, _ = self._run_with_item(item, {"results": [
-            {"index": 0, "relevant": True, "confidence": 0.8, "category": "funding",
-             "reason": "Šī ir riska kapitāla programma."}
-        ]})
-        self.assertEqual(len(out), 1)
-        self.assertFalse(out[0].relevant)
-        self.assertIn("Atcelts", out[0].reason)
-
-    def test_item_with_substantive_body_containing_the_word_is_not_overridden(self):
-        item = Item(source="MK", title="Grozījumi noteikumos Nr. 999",
-                    url="http://mk/3", date="2026-09-08",
-                    raw_text=_SUBSTANTIVE_BODY)  # contains "jaunuzņēmumi"
-        out, _ = self._run_with_item(item, {"results": [
-            {"index": 0, "relevant": True, "confidence": 0.8, "category": "funding",
-             "reason": "Pamatots ar pilnu teksta saturu."}
-        ]})
-        self.assertEqual(len(out), 1)
-        self.assertTrue(out[0].relevant)
-        self.assertNotIn("Atcelts", out[0].reason)
-
-    def test_item_with_substantive_body_but_no_startup_word_is_overridden(self):
-        # New 2026-09-16 behavior: unlike the old no-body-only check, a real, detailed
-        # body no longer exempts an item from the word requirement — e.g. an ALTUM loan
-        # to a named company with plenty of body text but never the word "jaunuzņēmums".
+    def test_real_production_case_digital_omnibus_discussion_is_overridden(self):
         item = Item(
-            source="Altum", title="ALTUM piešķir aizdevumu uzņēmumam saules parka būvniecībai",
-            url="http://altum/1", date="2026-09-08",
+            source="Ekonomikas ministrija",
+            title="Valainis ar piecu ES valstu kolēģiem pārrunā Digitālā omnibusa ietekmi uz uzņēmējdarbību",
+            url="http://em/1", date="2026-09-03",
             raw_text=(
-                "ALTUM piešķir aizdevumu uzņēmumam saules parka būvniecībai\n\n"
-                "ALTUM piešķīrusi aizdevumu 1,2 miljonu eiro apmērā uzņēmumam jaunas "
-                "saules elektrostacijas būvniecībai. Aizdevums pieejams jebkuram "
-                "Latvijas energoražotājam neatkarīgi no uzņēmuma lieluma vai darbības "
-                "ilguma, un projekts palielinās uzņēmuma jaudu par 40%."
+                "Valainis ar piecu ES valstu kolēģiem pārrunā Digitālā omnibusa ietekmi uz "
+                "uzņēmējdarbību\n\nEkonomikas ministrs Valainis videokonferencē ar piecu ES "
+                "valstu kolēģiem pārrunāja, kā Digitālais omnibuss ietekmē mazos un vidējos "
+                "uzņēmumus un jaunuzņēmumus. Nekādi konkrēti grozījumi vai termiņi vēl nav "
+                "izziņoti."
             ),
         )
         out, _ = self._run_with_item(item, {"results": [
-            {"index": 0, "relevant": True, "confidence": 0.8, "category": "funding",
-             "reason": "Šis ir finansējums uzņēmumam."}
+            {"index": 0, "relevant": True, "confidence": 0.85, "category": "regulation",
+             "reason": "Teksts skaidri min jaunuzņēmumus un digitālā regulējuma ietekmi."}
         ]})
         self.assertEqual(len(out), 1)
         self.assertFalse(out[0].relevant)
         self.assertIn("Atcelts", out[0].reason)
 
-    def test_no_body_item_already_marked_not_relevant_is_unaffected(self):
-        item = Item(source="MK", title="Grozījumi noteikumos Nr. 111",
-                    url="http://mk/4", date="2026-09-08", raw_text="Grozījumi noteikumos Nr. 111")
+    def test_decision_verb_title_is_not_overridden(self):
+        # Contrast case: an actual decision/action verb ("izsludina") must not trip this
+        # gate just because it also names a general topic.
+        item = Item(
+            source="LIAA", title="LIAA izsludina jaunu programmu jaunuzņēmumiem",
+            url="http://liaa/1", date="2026-09-03",
+            raw_text=(
+                "LIAA izsludina jaunu programmu jaunuzņēmumiem\n\nLIAA izsludinājusi jaunu "
+                "atbalsta programmu jaunuzņēmumiem ar finansējumu līdz 50 000 eiro agrīnās "
+                "stadijas uzņēmumiem."
+            ),
+        )
         out, _ = self._run_with_item(item, {"results": [
-            {"index": 0, "relevant": False, "confidence": 0.8, "category": "other",
-             "reason": "Nosaukums nenorāda uz jaunuzņēmumiem."}
+            {"index": 0, "relevant": True, "confidence": 0.9, "category": "funding",
+             "reason": "Jauna programma ar konkrētu finansējuma summu jaunuzņēmumiem."}
+        ]})
+        self.assertEqual(len(out), 1)
+        self.assertTrue(out[0].relevant)
+        self.assertNotIn("Atcelts", out[0].reason)
+
+    def test_discussion_verb_on_already_not_relevant_item_is_unaffected(self):
+        item = Item(
+            source="Ekonomikas ministrija", title="Ministrs pārrunā ceļu infrastruktūras jautājumus",
+            url="http://em/2", date="2026-09-03",
+            raw_text="Ministrs pārrunā ceļu infrastruktūras jautājumus\n\nSarunas par ceļu remontu.",
+        )
+        out, _ = self._run_with_item(item, {"results": [
+            {"index": 0, "relevant": False, "confidence": 0.9, "category": "other",
+             "reason": "Nesaistīts ar jaunuzņēmumiem."}
         ]})
         self.assertEqual(len(out), 1)
         self.assertFalse(out[0].relevant)

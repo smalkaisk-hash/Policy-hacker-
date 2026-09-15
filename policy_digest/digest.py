@@ -20,9 +20,8 @@ DEFINITION = (
     "Jaunuzņēmumiem atbilstošs ir ieraksts, kas pēc būtības ietekmē jaunuzņēmumu darbību, "
     "finansējumu vai izaugsmes vidi — piemēram, jauns atbalsts vai finansējuma iespēja, "
     "izmaiņas nodokļu vai darba tiesību regulējumā, vai iniciatīva inovāciju un digitalizācijas "
-    "jomā. Katru ierakstu izvērtē mākslīgais intelekts, izlasot tā pilno saturu — taču ieraksts "
-    "tiek iekļauts tikai tad, ja tā paša tekstā tieši minēts vārds \"jaunuzņēmums\" (vai "
-    "\"starta uzņēmums\"/\"startup\"); ar mazā un vidējā uzņēmuma (MVU) statusu vien nepietiek."
+    "jomā. Katru ierakstu izvērtē mākslīgais intelekts, izlasot tā pilno saturu, nevis meklējot "
+    "atsevišķus atslēgvārdus."
 )
 
 # (Latvian label, accent hex) — one accent color used consistently, not a rainbow per
