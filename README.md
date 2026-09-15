@@ -5,34 +5,32 @@ weekly digest of only the items that are actually relevant to startups.
 
 ## Sources covered
 
-**All 7 listed sources are implemented** — well past the task's minimum bar (≥3 sources, TAP
-portāls included). Every source scrapes the actual article/document body, not just the
-headline — see "How it works" below for what's fetched per source.
+All 7 listed sources are implemented (past the task's minimum of 3, TAP portāls included).
+Every source pulls the full article/document body, not just the headline.
 
 | Source | How it's fetched |
 |---|---|
-| **TAP portāls** (mandatory) | Metadata from the official [open dataset on data.gov.lv](https://data.gov.lv/dati/lv/dataset/tap-publicetie-tiesibu-akti) (clean, no-auth, CC0 JSON, updated daily), plus the full draft decision/annotation text pulled from TAP's public "structuralizer" preview endpoint for each act. |
-| Valsts sekretāru sanāksme | Scrapes `tapportals.mk.gov.lv/meetings/state_secretaries`, following each meeting's protocol page to list the individual agenda items *and* their full decision text. |
+| **TAP portāls** (mandatory) | [Open dataset on data.gov.lv](https://data.gov.lv/dati/lv/dataset/tap-publicetie-tiesibu-akti) for metadata, plus full act text via TAP's public "structuralizer" preview endpoint. |
+| Valsts sekretāru sanāksme | `tapportals.mk.gov.lv/meetings/state_secretaries` — full agenda item text. |
 | Ministru kabineta protokoli | Same mechanism, `tapportals.mk.gov.lv/meetings/cabinet_ministers`. |
-| Ekonomikas ministrija | Scrapes the `em.gov.lv/lv/jaunumi` listing, then fetches each article's own page for the full body. |
-| LIAA | Same mechanism as EM (same underlying CMS template), `liaa.gov.lv/lv/jaunumi`. |
-| Altum | Scrapes `altum.lv/par-altum/aktualitates/` (a different CMS than EM/LIAA, so it has its own scraper) and fetches each article's full body. Note: this listing page isn't paginated, so a lookback window longer than ~1 month may miss older items. |
-| Saeimas komisiju darba kārtības | No unified feed exists on saeima.lv itself (each committee runs its own mini-site) — but its "Komisiju sēžu darba kārtības" link forwards to an internal Domino system (`titania.saeima.lv`) whose public view lists *all* committees' sittings for a given day, each with the full agenda text. Queried once per day in the lookback window. |
+| Ekonomikas ministrija | `em.gov.lv/lv/jaunumi` listing + each article's full body. |
+| LIAA | Same CMS as EM, `liaa.gov.lv/lv/jaunumi`. |
+| Altum | `altum.lv/par-altum/aktualitates/` + each article's full body. |
+| Saeimas komisiju darba kārtības | Public agenda feed on `titania.saeima.lv` (reached via saeima.lv's own committee-agenda link), all committees' sittings per day. |
 
 ## What counts as "startup-relevant"
 
 An item is flagged if it involves:
-- **Funding & support programs** — grants, EU funds, accelerator/incubator programs, LIAA/Altum
-  initiatives, investment/venture capital programs.
-- **Regulatory or legal changes** affecting startups, SMEs, or tech companies — company law, tax
-  treatment (incl. reinvested profit, employee stock options), labor law, digital services/AI
-  regulation, public procurement rules relevant to tech vendors.
+- **Funding & support programs** — grants, EU funds, accelerator/incubator programs,
+  LIAA/Altum initiatives, investment/VC programs.
+- **Regulatory or legal changes** affecting startups, SMEs, or tech companies — company law,
+  tax treatment, labor law, digital services/AI regulation, procurement rules for tech vendors.
 - **Draft legislation or government initiatives** on innovation, digitalization, or
   entrepreneurship.
 
-Routine administrative/personnel/ceremonial items and unrelated sector regulation (e.g.
-agriculture subsidies with no tech angle) are excluded. This definition is encoded directly in
-[`policy_digest/classify.py`](policy_digest/classify.py) (`SYSTEM_PROMPT` and `KEYWORDS`).
+Routine administrative/personnel/ceremonial items and unrelated sector regulation are
+excluded. Definition lives in [`policy_digest/classify.py`](policy_digest/classify.py)
+(`SYSTEM_PROMPT` and `KEYWORDS`).
 
 ## How it works
 
@@ -40,68 +38,18 @@ agriculture subsidies with no tech angle) are excluded. This definition is encod
 fetch (7 sources, full text) → dedupe against local state → classify for relevance → render digest
 ```
 
-1. **Fetch** — one module per source under `policy_digest/sources/`, each returning a normalized
-   `Item(source, title, url, date, summary, raw_text)`. `raw_text` is the actual article/document
-   body where one exists (fetched from the item's own detail page, or already present on the page
-   already being scraped — e.g. MK/VSS agenda item text and Saeima's full agenda sit right on the
-   listing/detail pages already being requested, so no extra request is needed for those). This
-   matters because classification is only as good as what it can see: a title alone is often too
-   vague to judge.
-2. **Dedupe** — `policy_digest/state.py` keeps `output/state.json`, a flat list of previously seen
-   item URLs, so re-running only surfaces genuinely new items (this is what actually saves the
-   "5 hours/week of manual checking"). This dedupe check happens *inside* the fetch step, not just
-   after it: each fetcher is passed the seen-URL set and skips re-downloading an already-seen
-   item's full article/document body (the expensive part), since something already published
-   isn't going to change. Only the cheap listing/index page for each source is always re-checked,
-   to discover what's actually new. One consequence: for VSS/MK protocols specifically, an
-   already-fully-scraped meeting is skipped outright rather than re-parsed, so the "items
-   examined" count printed for those two sources reflects work done *this run*, not a stable
-   total — the dedupe/relevance results themselves aren't affected by this.
-3. **Classify** — `policy_digest/classify.py`:
-   - if `ANTHROPIC_API_KEY` is set, **every** fetched item — not just ones containing a
-     particular word — goes to **Claude Haiku** in small batches (structured tool-use call)
-     for a real relevance judgment, confidence, one-line reason, and category, based on
-     what the item's own text actually says;
-   - without a key, there's no model available to make that judgment, so this falls back to
-     a free keyword pre-filter instead, with the reason built from the actual matched text —
-     the full *sentence* the keyword appears in (sentence-boundary aware, not a fixed
-     character radius, so it reads cleanly instead of cutting off mid-word), quoted from the
-     article/document body, preferring the body over the title (a committee literally named
-     "...(nodokļu)..." would otherwise "match" on every single sitting regardless of that
-     day's real agenda) — rather than a bare "keyword found" label. This is the ceiling for
-     what's possible without an LLM: a real one-line "why this matters to startups" summary
-     needs actual reading comprehension, which is exactly what the Claude Haiku path above
-     does once a key is supplied.
-4. **Dedupe across sources** — `policy_digest/dedupe.py` merges items that are the same
-   underlying article/document published on more than one source (e.g. EM and LIAA sometimes
-   syndicate the identical press release, whether verbatim or with a reworded headline) into
-   one entry crediting every source it appeared on (e.g. "Ekonomikas ministrija + LIAA").
-   Matching compares the actual scraped article/document **body text** (via `difflib`
-   similarity, scoped to same-day items for speed), not the title — so a reworded headline
-   doesn't slip through, and it correctly leaves alone the many sources with *recurring* items
-   that legitimately share a name on different days (a standing Saeima committee's sitting is
-   always called "Budžeta un finanšu (nodokļu) komisijas sēde" regardless of that day's actual
-   agenda) since their content genuinely differs. Crucially, it only ever merges items from
-   *different* sources — two items from the same source are never compared, since a single
-   source's own scrape is already unique by construction; an earlier version of this compared
-   same-source items too and briefly (incorrectly) merged distinct same-meeting agenda items
-   that happened to share boilerplate text.
-   A second pass, `dedupe_semantic` (only runs if `ANTHROPIC_API_KEY` is set), catches what
-   text-similarity structurally cannot: the same real-world event covered by two
-   *independently written* articles — e.g. EM's own short ministry note about a company's
-   €10M investment vs. LIAA's much longer piece on that same investment, with different
-   quotes (a government minister, the company's founder, LIAA's director) and a different
-   angle. These share almost no overlapping wording, so no similarity threshold catches them
-   without also producing false positives elsewhere — recognizing "same event, different
-   write-up" needs actual reading comprehension, which is what this pass asks Claude Haiku to
-   do directly (batched per same-day, multi-source group of items).
-5. **Render** — `policy_digest/digest.py` writes a digest grouped by source, both as
-   `output/digest_<date>.md` and a standalone `output/digest_<date>.html`. Output is Latvian
-   throughout (the "startup-relevant" definition, category labels, everything) since this is a
-   digest for a Latvian team about Latvian sources. The HTML version is startin.lv-branded
-   (logo from `assets/logobig.png`, embedded inline as base64 so the file stays
-   self-contained/emailable) with a plain editorial layout — one accent color, serif headline,
-   simple list — rather than a colorful dashboard-style design.
+1. **Fetch** — one module per source under `policy_digest/sources/`, returning normalized
+   items with the real article/document body attached, not just a title.
+2. **Dedupe (seen-before)** — `policy_digest/state.py` tracks previously seen item URLs in
+   `output/state.json`, so re-runs only surface genuinely new items.
+3. **Classify** — `policy_digest/classify.py` sends every item to **Claude Haiku** for a
+   relevance judgment, confidence, one-line reason, and category (falls back to a free
+   keyword pre-filter if no `ANTHROPIC_API_KEY` is set).
+4. **Dedupe (cross-source)** — `policy_digest/dedupe.py` merges the same underlying
+   article/document when it's published on more than one source, first by text similarity
+   then (with an API key) an LLM pass for independently-written pieces about the same event.
+5. **Render** — `policy_digest/digest.py` writes a Latvian-language, startin.lv-branded
+   digest as `output/digest_<date>.md` and `.html`.
 
 ## Setup
 
@@ -120,42 +68,19 @@ python run_digest.py --days 14       # wider window
 python run_digest.py --no-state      # don't read/write dedupe state (repeatable demo runs)
 ```
 
-Set `ANTHROPIC_API_KEY` in `.env` (auto-loaded via `python-dotenv`) or your environment to get
-real LLM classification; omit it to run in free keyword-only mode. Output lands in
-`output/digest_<today>.md` and `output/digest_<today>.html` (gitignored — a sample run is
-checked into [`sample_digest/`](sample_digest/) instead — that sample was generated **with**
-`ANTHROPIC_API_KEY` set, i.e. the real Claude Haiku classification path, not the keyword
-fallback).
+Set `ANTHROPIC_API_KEY` in `.env` to get real LLM classification; omit it to run in free
+keyword-only mode. Output lands in `output/digest_<today>.md` and `.html` (gitignored — a
+sample run generated **with** an API key is checked into
+[`sample_digest/`](sample_digest/)).
 
 ## Hosting a live version (GitHub Pages)
 
-[`.github/workflows/digest.yml`](.github/workflows/digest.yml) runs the digest and publishes it
-to GitHub Pages — free, no server. One-time setup (both in the repo's GitHub web UI):
+[`.github/workflows/digest.yml`](.github/workflows/digest.yml) runs the digest and publishes
+it to GitHub Pages — free, no server. One-time setup in the repo's GitHub web UI:
 
-1. **Add the API key as a secret**: Settings → Secrets and variables → Actions → New repository
-   secret → name `ANTHROPIC_API_KEY`, paste the key.
-2. **Turn on Pages**: Settings → Pages → Build and deployment → Source: **GitHub Actions**
-   (not "Deploy from a branch").
+1. **Add the API key as a secret**: Settings → Secrets and variables → Actions → New
+   repository secret → name `ANTHROPIC_API_KEY`.
+2. **Turn on Pages**: Settings → Pages → Build and deployment → Source: **GitHub Actions**.
 
-After that, the page publishes:
-- **Automatically** every Monday (the `cron` schedule in the workflow), or
-- **On demand** — Actions tab → "Publish policy digest" → Run workflow button (top right) →
-  Run workflow. That's how to get a fresh version without waiting for the schedule.
-
-Each run replaces the whole published page with a fresh last-7-days snapshot (`--no-state`, so
-no cross-run dedupe bookkeeping needed on an ephemeral CI runner) — there's no old version to
-clear, the new deployment just overwrites it. The published URL is shown at Settings → Pages
-once it's deployed at least once, and also in the workflow run's summary page.
-
-## Known limitations
-
-- **TAP portāls**: only the document version rendered by TAP's inline "structuralizer" preview is
-  fetched; a version that's a plain file attachment (.docx) is skipped rather than downloaded and
-  parsed. Most acts have at least one structuralizer-rendered version, but not all.
-- **Altum**: its news listing page isn't paginated, so it only sees the ~12 most recent items —
-  fine for a weekly run, not for a lookback window beyond about a month.
-- **Cross-source dedupe is same-day only**: it buckets by date before comparing content (for
-  speed, and because that's the observed syndication pattern), so if the same press release
-  were republished a day or more apart it wouldn't be caught.
-- **Saeima**: pulled from an internal-looking Domino endpoint reached only via a redirect from the
-  public site — undocumented, so it could change without notice; no official API was found.
+After that, it publishes automatically every Monday, or on demand via the Actions tab →
+"Publish policy digest" → Run workflow.
